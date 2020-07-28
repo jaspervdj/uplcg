@@ -1,14 +1,14 @@
-Name:                cafp
-Version:             0.1.0
-Synopsis:            Cards Against Functional Programming
-License:             BSD3
-License-file:        LICENSE
-Author:              Jasper Van der Jeugt <m@jaspervdj.be>
-Maintainer:          Jasper Van der Jeugt <m@jaspervdj.be>
-Copyright:           2020 Jasper Van der Jeugt <m@jaspervdj.be>
-Category:            Language
-Build-type:          Simple
-Cabal-version:       1.18
+Name:          cafp
+Version:       0.1.0
+Synopsis:      Cards Against Functional Programming
+License:       BSD3
+License-file:  LICENSE
+Author:        Jasper Van der Jeugt <m@jaspervdj.be>
+Maintainer:    Jasper Van der Jeugt <m@jaspervdj.be>
+Copyright:     2020 Jasper Van der Jeugt <m@jaspervdj.be>
+Category:      Language
+Build-type:    Simple
+Cabal-version: 1.18
 
 Library
   Default-language: Haskell2010
@@ -19,11 +19,16 @@ Library
     Cafp.Messages
 
   Build-depends:
-    base >= 4.9 && < 5
+    base       >= 4.9 && < 5,
+    elm-bridge >= 0.5 && < 0.6
 
-Executable cafp-generate-types
-  Hs-source-dirs:    src
-  Main-is:           GenerateTypes.hs
-  Default-language:  Haskell2010
-  Ghc-options:       -Wall
-  build-depends:     base, cafp
+Executable cafp-generate-elm-types
+  Hs-source-dirs:   src
+  Main-is:          GenerateElmTypes.hs
+  Default-language: Haskell2010
+  Ghc-options:      -Wall
+
+  Build-depends:
+    base       >= 4.9 && < 5,
+    cafp,
+    elm-bridge >= 0.5 && < 0.6
