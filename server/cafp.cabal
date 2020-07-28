@@ -1,0 +1,29 @@
+Name:                cafp
+Version:             0.1.0
+Synopsis:            Cards Against Functional Programming
+License:             BSD3
+License-file:        LICENSE
+Author:              Jasper Van der Jeugt <m@jaspervdj.be>
+Maintainer:          Jasper Van der Jeugt <m@jaspervdj.be>
+Copyright:           2020 Jasper Van der Jeugt <m@jaspervdj.be>
+Category:            Language
+Build-type:          Simple
+Cabal-version:       1.18
+
+Library
+  Default-language: Haskell2010
+  Ghc-options:      -Wall
+  Hs-source-dirs:   lib
+
+  Exposed-modules:
+    Cafp.Messages
+
+  Build-depends:
+    base >= 4.9 && < 5
+
+Executable cafp-generate-types
+  Hs-source-dirs:    src
+  Main-is:           GenerateTypes.hs
+  Default-language:  Haskell2010
+  Ghc-options:       -Wall
+  build-depends:     base, cafp
