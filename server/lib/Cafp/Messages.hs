@@ -6,7 +6,7 @@ module Cafp.Messages
 import           Elm.Derive
 
 data ServerMessage
-    = Welcome
+    = Welcome Int
     | Bye
     deriving (Show)
 

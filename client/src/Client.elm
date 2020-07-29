@@ -46,7 +46,8 @@ update msg model = case msg of
     WebSocketIn json ->
         case Json.Decode.decodeString Messages.jsonDecServerMessage json of
             Err str -> (Error <| Json.Decode.errorToString str, Cmd.none)
-            Ok Messages.Welcome -> Debug.log "Welcome" (model, Cmd.none)
+            Ok (Messages.Welcome playerId) ->
+                Debug.log ("Welcome " ++ String.fromInt playerId) (model, Cmd.none)
             Ok Messages.Bye -> Debug.log "Bye" (model, Cmd.none)
 
 main : Program () Model Msg

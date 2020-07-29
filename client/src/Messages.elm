@@ -9,18 +9,22 @@ import Set exposing (Set)
 
 
 type ServerMessage  =
-    Welcome 
+    Welcome Int
     | Bye 
 
 jsonDecServerMessage : Json.Decode.Decoder ( ServerMessage )
-jsonDecServerMessage = 
-    let jsonDecDictServerMessage = Dict.fromList [("Welcome", Welcome), ("Bye", Bye)]
-    in  decodeSumUnaries "ServerMessage" jsonDecDictServerMessage
+jsonDecServerMessage =
+    let jsonDecDictServerMessage = Dict.fromList
+            [ ("Welcome", Json.Decode.lazy (\_ -> Json.Decode.map Welcome (Json.Decode.int)))
+            , ("Bye", Json.Decode.lazy (\_ -> Json.Decode.succeed Bye))
+            ]
+    in  decodeSumObjectWithSingleField  "ServerMessage" jsonDecDictServerMessage
 
 jsonEncServerMessage : ServerMessage -> Value
 jsonEncServerMessage  val =
-    case val of
-        Welcome -> Json.Encode.string "Welcome"
-        Bye -> Json.Encode.string "Bye"
+    let keyval v = case v of
+                    Welcome v1 -> ("Welcome", encodeValue (Json.Encode.int v1))
+                    Bye  -> ("Bye", encodeValue (Json.Encode.list identity []))
+    in encodeSumObjectWithSingleField keyval val
 
 
