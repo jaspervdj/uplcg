@@ -22,9 +22,13 @@ newServer = Server <$> newTVar HMS.empty
 
 main :: IO ()
 main = Scotty.scotty 3000 $ do
-    Scotty.get "/rooms/:id" $ do
+    Scotty.get "/rooms/:id/" $ do
         roomId <- Scotty.param "id"
         when (T.length roomId < 6) $
             Scotty.raise "Room ID should be at least 6 characters"
         Scotty.setHeader "Content-Type" "text/html"
         Scotty.file "assets/client.html"
+
+    Scotty.get "/assets/client.js" $ do
+        Scotty.setHeader "Content-Type" "application/JavaScript"
+        Scotty.file "assets/client.js"

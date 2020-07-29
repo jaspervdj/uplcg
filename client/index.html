@@ -5,5 +5,10 @@
   <title>Client</title>
 </head>
   <body>
+    <div id="main"></div>
+    <script type="text/JavaScript" src="/assets/client.js"></script>
+    <script>
+      var app = Elm.Client.init({node: document.querySelector("main")});
+    </script>
   </body>
 </html>

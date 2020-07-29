@@ -3,11 +3,19 @@ module Client exposing (main)
 import Browser
 import Html
 
-main : Program () () msg
-main = Browser.element
-    { init = \() -> ((), Cmd.none)
+type Message
+    = Ignore
+
+main : Program () () Message
+main = Browser.application
+    { init = \() url key -> ((), Cmd.none)
     , update = \_ model -> (model, Cmd.none)
     , subscriptions = \_ -> Sub.none
-    , view = \model -> Html.h1 [] [Html.text "Hi"]
+    , view = \model ->
+        { title = "Client"
+        , body = [Html.h1 [] [Html.text "Hi"]]
+        }
+    , onUrlChange = \url -> Ignore
+    , onUrlRequest = \urlRequest -> Ignore
     }
 
