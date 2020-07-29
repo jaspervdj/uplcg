@@ -9,6 +9,17 @@
     <script type="text/JavaScript" src="/assets/client.js"></script>
     <script>
       var app = Elm.Client.init({node: document.querySelector("main")});
+
+      var roomId = document.location.pathname.split("/")[2];
+      var url = "ws://" + document.location.host +
+        "/rooms/" + roomId + "/events";
+      var socket = new WebSocket(url);
+      app.ports.webSocketOut.subscribe(function(message) {
+        socket.send(message);
+      });
+      socket.addEventListener("message", function(event) {
+        app.ports.webSocketIn.send(event.data);
+      });
     </script>
   </body>
 </html>
