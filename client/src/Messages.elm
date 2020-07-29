@@ -10,15 +10,17 @@ import Set exposing (Set)
 
 type ServerMessage  =
     Welcome 
+    | Bye 
 
 jsonDecServerMessage : Json.Decode.Decoder ( ServerMessage )
 jsonDecServerMessage = 
-    let jsonDecDictServerMessage = Dict.fromList [("Welcome", Welcome)]
+    let jsonDecDictServerMessage = Dict.fromList [("Welcome", Welcome), ("Bye", Bye)]
     in  decodeSumUnaries "ServerMessage" jsonDecDictServerMessage
 
 jsonEncServerMessage : ServerMessage -> Value
 jsonEncServerMessage  val =
     case val of
         Welcome -> Json.Encode.string "Welcome"
+        Bye -> Json.Encode.string "Bye"
 
 

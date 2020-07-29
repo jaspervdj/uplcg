@@ -7,6 +7,7 @@ import           Cafp.Messages
 import           Control.Concurrent             (threadDelay)
 import           Control.Concurrent.STM         (STM, TVar, newTVar)
 import           Control.Monad                  (forever, when)
+import qualified Data.Aeson                     as Aeson
 import qualified Data.HashMap.Strict            as HMS
 import           Data.Text                      (Text)
 import qualified Data.Text                      as T
@@ -53,9 +54,9 @@ wsApp pc = case routePendingConnection pc of
     Just roomId -> do
         conn <- WS.acceptRequest pc
         WS.forkPingThread conn 30
-        WS.sendTextData conn $ "Welcome to room " <> roomId
+        WS.sendTextData conn $ Aeson.encode Welcome
         forever $ do
-            WS.sendTextData conn $ ("loop data" :: Text)
+            WS.sendTextData conn $ Aeson.encode Bye
             threadDelay $ 1 * 1000000
 
 main :: IO ()

@@ -2,6 +2,8 @@ port module Client exposing (main)
 
 import Browser
 import Html exposing (Html)
+import Json.Decode
+import Messages
 import Url exposing (Url)
 
 port webSocketIn : (String -> msg) -> Sub msg
@@ -14,8 +16,8 @@ type Msg
 
 type Model
     = Error String
-    | JoinRoom
-        { id : String
+    | Connecting
+        { roomId : String
         }
 
 parseRoomId : Url -> Result String String
@@ -29,8 +31,9 @@ view model = case model of
         [ Html.h1 [] [Html.text "Error"]
         , Html.p [] [Html.text str]
         ]
-    JoinRoom room ->
-        [ Html.h1 [] [Html.text <| "Room " ++ room.id]
+    Connecting state ->
+        [ Html.h1 []
+            [Html.text <| "Connecting to room " ++ state.roomId ++ "..."]
         ]
 
 subscriptions : Model -> Sub Msg
@@ -40,13 +43,17 @@ update : Msg -> Model -> (Model, Cmd Msg)
 update msg model = case msg of
     Ignore -> (model, Cmd.none)
     Send -> (model, webSocketOut "Hi")
-    WebSocketIn str -> Debug.log str (model, Cmd.none)
+    WebSocketIn json ->
+        case Json.Decode.decodeString Messages.jsonDecServerMessage json of
+            Err str -> (Error <| Json.Decode.errorToString str, Cmd.none)
+            Ok Messages.Welcome -> Debug.log "Welcome" (model, Cmd.none)
+            Ok Messages.Bye -> Debug.log "Bye" (model, Cmd.none)
 
 main : Program () Model Msg
 main = Browser.application
     { init = \() url key -> case parseRoomId url of
         Err str -> (Error <| "Could not parse room ID: " ++ str, Cmd.none)
-        Ok roomId -> (JoinRoom {id = roomId}, Cmd.none)
+        Ok roomId -> (Connecting {roomId = roomId}, Cmd.none)
     , update = update
     , subscriptions = subscriptions
     , view = \model -> {title = "Client", body = view model}
