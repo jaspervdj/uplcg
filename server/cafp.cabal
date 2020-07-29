@@ -17,18 +17,27 @@ Library
 
   Exposed-modules:
     Cafp.Messages
+    Cafp.Main.GenerateElmTypes
+    Cafp.Main.Server
 
   Build-depends:
-    base       >= 4.9 && < 5,
-    elm-bridge >= 0.5 && < 0.6
+    base                 >= 4.9  && < 5,
+    elm-bridge           >= 0.5  && < 0.6,
+    scotty               >= 0.11 && < 0.12,
+    stm                  >= 2.5  && < 2.6,
+    text                 >= 1.2  && < 1.3,
+    unordered-containers >= 0.2  && < 0.3
 
 Executable cafp-generate-elm-types
   Hs-source-dirs:   src
   Main-is:          GenerateElmTypes.hs
   Default-language: Haskell2010
   Ghc-options:      -Wall
+  Build-depends:    base, cafp
 
-  Build-depends:
-    base       >= 4.9 && < 5,
-    cafp,
-    elm-bridge >= 0.5 && < 0.6
+Executable cafp-server
+  Hs-source-dirs:   src
+  Main-is:          Server.hs
+  Default-language: Haskell2010
+  Ghc-options:      -Wall
+  Build-depends:    base, cafp
