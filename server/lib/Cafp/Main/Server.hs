@@ -26,4 +26,5 @@ main = Scotty.scotty 3000 $ do
         roomId <- Scotty.param "id"
         when (T.length roomId < 6) $
             Scotty.raise "Room ID should be at least 6 characters"
-        Scotty.html $ "<h1>Scotty, " <> TL.fromStrict roomId <> " me up!</h1>"
+        Scotty.setHeader "Content-Type" "text/html"
+        Scotty.file "assets/client.html"
