@@ -1,0 +1,16 @@
+html {
+  font-size: 18px;
+}
+
+.black {
+  color: white;
+  background: black;
+  padding: 18px;
+  border-radius: 18px;
+}
+
+.blank {
+  border-bottom: 2px solid white;
+  display: inline-block;
+  width: 42px;
+}

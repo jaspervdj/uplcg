@@ -3,7 +3,11 @@ ELM_SOURCES=$(shell find client/src -name '*.elm')
 ELM_MESSAGES_SOURCE=client/src/Messages.elm
 
 .PHONY: build
-build: server/assets/client.js server/assets/client.html
+build: server/assets/client.js \
+	server/assets/client.html \
+	server/assets/style.css \
+	server/assets/black.txt \
+	server/assets/white.txt
 
 server: build
 	cd server && stack exec cafp-server
@@ -20,5 +24,13 @@ server/assets/client.js: $(ELM_MESSAGES_SOURCE) $(ELM_SOURCES)
 	cd client && elm make src/Client.elm --output=../server/assets/client.js
 
 server/assets/client.html: client/index.html
-	mkdir -p server/assets
 	cp client/index.html $@
+
+server/assets/style.css: client/style.css
+	cp $< $@
+
+server/assets/black.txt: black.txt
+	cp $< $@
+
+server/assets/white.txt: white.txt
+	cp $< $@

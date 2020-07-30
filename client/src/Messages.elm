@@ -11,19 +11,22 @@ import Set exposing (Set)
 type alias GameView  =
    { opponents: (List String)
    , myName: String
+   , blackCard: (Maybe String)
    }
 
 jsonDecGameView : Json.Decode.Decoder ( GameView )
 jsonDecGameView =
-   Json.Decode.succeed (\popponents pmyName -> {opponents = popponents, myName = pmyName})
+   Json.Decode.succeed (\popponents pmyName pblackCard -> {opponents = popponents, myName = pmyName, blackCard = pblackCard})
    |> required "opponents" (Json.Decode.list (Json.Decode.string))
    |> required "myName" (Json.Decode.string)
+   |> fnullable "blackCard" (Json.Decode.string)
 
 jsonEncGameView : GameView -> Value
 jsonEncGameView  val =
    Json.Encode.object
    [ ("opponents", (Json.Encode.list Json.Encode.string) val.opponents)
    , ("myName", Json.Encode.string val.myName)
+   , ("blackCard", (maybeEncode (Json.Encode.string)) val.blackCard)
    ]
 
 

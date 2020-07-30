@@ -11,6 +11,7 @@ import           Elm.Derive
 data GameView = GameView
     { gameViewOpponents :: [Text]
     , gameViewMyName    :: Text
+    , gameViewBlackCard :: Maybe Text
     } deriving (Show)
 
 data ServerMessage

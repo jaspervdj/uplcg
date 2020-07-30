@@ -3,6 +3,7 @@
 {-# LANGUAGE TemplateHaskell   #-}
 module Cafp.Game
     ( PlayerId
+    , Cards (..)
     , Game (..)
 
     , newGame
@@ -15,7 +16,7 @@ module Cafp.Game
     ) where
 
 import           Cafp.Messages
-import           Control.Lens        (at, ix, over, (%~), (&), (.~), (^.))
+import           Control.Lens        (at, ix, over, (%~), (&), (.~), (^.), (^?))
 import           Control.Lens.TH     (makeLenses)
 import qualified Data.HashMap.Strict as HMS
 import           Data.Maybe          (fromMaybe)
@@ -24,15 +25,22 @@ import qualified Data.Text           as T
 
 type PlayerId = Int
 
+data Cards = Cards
+    { _cardsBlack :: [T.Text]
+    , _cardsWhite :: [T.Text]
+    } deriving (Show)
+
 data Game = Game
-    { _gamePlayers      :: !(HMS.HashMap Int Text)
+    { _gameCards        :: !Cards
+    , _gamePlayers      :: !(HMS.HashMap Int Text)
     , _gameNextPlayerId :: !Int
     } deriving (Show)
 
+makeLenses ''Cards
 makeLenses ''Game
 
-newGame :: Game
-newGame = Game HMS.empty 1
+newGame :: Cards -> Game
+newGame cards = Game cards HMS.empty 1
 
 joinGame :: Game -> (PlayerId, Game)
 joinGame game =
@@ -58,4 +66,5 @@ gameViewForPlayer self game =
     GameView
         { gameViewOpponents = opponents
         , gameViewMyName    = name
+        , gameViewBlackCard = game ^? gameCards . cardsBlack . ix 0
         }

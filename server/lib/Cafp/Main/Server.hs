@@ -18,6 +18,7 @@ import qualified Data.HashMap.Strict            as HMS
 import           Data.Text                      (Text)
 import qualified Data.Text                      as T
 import qualified Data.Text.Encoding             as T
+import qualified Data.Text.IO                   as T
 import qualified Data.Text.Lazy                 as TL
 import qualified Network.Wai                    as Wai
 import qualified Network.Wai.Handler.Warp       as Warp
@@ -39,14 +40,22 @@ data Room = Room
     }
 
 data Server = Server
-    { serverRooms :: TVar (HMS.HashMap RoomId Room)
+    { serverCards :: Cards
+    , serverRooms :: TVar (HMS.HashMap RoomId Room)
     }
 
-newServer :: STM Server
-newServer = Server <$> STM.newTVar HMS.empty
+readCards :: IO Cards
+readCards = Cards
+    <$> fmap T.lines (T.readFile "assets/black.txt")
+    <*> fmap T.lines (T.readFile "assets/white.txt")
 
-newRoom :: STM Room
-newRoom = Room <$> STM.newTVar newGame <*> STM.newTVar HMS.empty
+newServer :: IO Server
+newServer = Server <$> readCards <*> atomically (STM.newTVar HMS.empty)
+
+newRoom :: Server -> STM Room
+newRoom server = Room
+    <$> STM.newTVar (newGame $ serverCards server)
+    <*> STM.newTVar HMS.empty
 
 scottyApp :: IO Wai.Application
 scottyApp = Scotty.scottyApp $ do
@@ -61,6 +70,10 @@ scottyApp = Scotty.scottyApp $ do
         Scotty.setHeader "Content-Type" "application/JavaScript"
         Scotty.file "assets/client.js"
 
+    Scotty.get "/assets/style.css" $ do
+        Scotty.setHeader "Content-Type" "text/css"
+        Scotty.file "assets/style.css"
+
 routePendingConnection :: WS.PendingConnection -> Maybe RoomId
 routePendingConnection pending =
     let path = T.decodeUtf8 . WS.requestPath $ WS.pendingRequest pending in
@@ -74,7 +87,7 @@ getOrCreateRoom server roomId = do
     case HMS.lookup roomId rooms of
         Just room -> pure room
         Nothing   -> do
-            room <- newRoom
+            room <- newRoom server
             STM.writeTVar (serverRooms server) $ HMS.insert roomId room rooms
             pure room
 
@@ -131,7 +144,7 @@ main :: IO ()
 main = do
     let port = 3000
         settings = Warp.setPort port Warp.defaultSettings
-    server <- atomically newServer
+    server <- newServer
     sapp <- scottyApp
     Warp.runSettings settings $
         WaiWs.websocketsOr WS.defaultConnectionOptions (wsApp server) sapp

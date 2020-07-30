@@ -67,7 +67,18 @@ view model = case model of
                 ]
                 [Html.text "change"]
             ]
-        ]
+        ] ++
+        (case game.view.blackCard of
+            Nothing -> []
+            Just c -> [blackCard c])
+
+blackCard : String -> Html a
+blackCard string =
+    let blank = Html.span [Html.Attributes.class "blank"] [] in
+    Html.div [Html.Attributes.class "black"] <|
+    List.intersperse blank <|
+    List.map Html.text <|
+    String.split "\\BLANK" string
 
 subscriptions : Model -> Sub Msg
 subscriptions model = webSocketIn WebSocketIn
