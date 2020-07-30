@@ -23,7 +23,11 @@ import qualified Network.Wai                    as Wai
 import qualified Network.Wai.Handler.Warp       as Warp
 import qualified Network.Wai.Handler.WebSockets as WaiWs
 import qualified Network.WebSockets             as WS
+import qualified System.IO                      as IO
 import qualified Web.Scotty                     as Scotty
+
+warning :: String -> IO ()
+warning = IO.hPutStrLn IO.stderr
 
 type RoomId = T.Text
 
@@ -90,6 +94,7 @@ syncRoom room = do
     (game, sinks) <- atomically $ (,)
         <$> STM.readTVar (roomGame room)
         <*> STM.readTVar (roomSinks room)
+    warning $ "New state: " ++ show game
     for_ (HMS.toList sinks) $ \(pid, sink) ->
         sink . Aeson.encode . SyncGameView $ gameViewForPlayer pid game
 
@@ -109,8 +114,18 @@ wsApp server pc = case routePendingConnection pc of
                 loop conn roomId playerId)
   where
     loop conn roomId playerId = forever $ do
-        WS.sendTextData conn $ Aeson.encode Bye
-        threadDelay $ 1 * 1000000
+        msg <- WS.receiveData conn
+        case Aeson.decode msg of
+            Just cm -> do
+                warning $ "Client: " ++ show cm
+                room <- atomically $ do
+                    room <- getOrCreateRoom server roomId
+                    STM.modifyTVar' (roomGame room) $
+                        processClientMessage playerId cm
+                    pure room
+                syncRoom room
+            Nothing -> do
+                warning $ "Could not decode client message: " ++ show msg
 
 main :: IO ()
 main = do

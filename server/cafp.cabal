@@ -26,6 +26,7 @@ Library
     base                 >= 4.9  && < 5,
     bytestring           >= 0.10 && < 0.11,
     elm-bridge           >= 0.5  && < 0.6,
+    lens                 >= 4.18 && < 4.19,
     scotty               >= 0.11 && < 0.12,
     stm                  >= 2.5  && < 2.6,
     text                 >= 1.2  && < 1.3,

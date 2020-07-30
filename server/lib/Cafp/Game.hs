@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE TemplateHaskell   #-}
 module Cafp.Game
     ( PlayerId
     , Game (..)
@@ -8,33 +9,53 @@ module Cafp.Game
     , joinGame
     , leaveGame
 
+    , processClientMessage
+
     , gameViewForPlayer
     ) where
 
 import           Cafp.Messages
+import           Control.Lens        (at, ix, over, (%~), (&), (.~), (^.))
+import           Control.Lens.TH     (makeLenses)
 import qualified Data.HashMap.Strict as HMS
+import           Data.Maybe          (fromMaybe)
 import           Data.Text           (Text)
 import qualified Data.Text           as T
 
 type PlayerId = Int
 
 data Game = Game
-    { gamePlayers      :: !(HMS.HashMap Int Text)
-    , gameNextPlayerId :: !Int
+    { _gamePlayers      :: !(HMS.HashMap Int Text)
+    , _gameNextPlayerId :: !Int
     } deriving (Show)
+
+makeLenses ''Game
 
 newGame :: Game
 newGame = Game HMS.empty 1
 
 joinGame :: Game -> (PlayerId, Game)
-joinGame game@Game {..} =
-    let pid = gameNextPlayerId
-        name = "Player " <> T.pack (show pid)
-        players = HMS.insert pid name gamePlayers in
-    (pid, game {gameNextPlayerId = pid + 1, gamePlayers = players})
+joinGame game =
+    let pid = game ^. gameNextPlayerId
+        name = "Player " <> T.pack (show pid) in
+    ( pid
+    , game & gameNextPlayerId %~ succ & gamePlayers %~ HMS.insert pid name
+    )
+
 
 leaveGame :: PlayerId -> Game -> Game
-leaveGame pid game = game {gamePlayers = HMS.delete pid $ gamePlayers game}
+leaveGame pid = over gamePlayers $ HMS.delete pid
+
+processClientMessage :: PlayerId -> ClientMessage -> Game -> Game
+processClientMessage pid msg game = case msg of
+    ChangeName name ->
+        game & gamePlayers . ix pid .~ name
 
 gameViewForPlayer :: PlayerId -> Game -> GameView
-gameViewForPlayer _ = GameView . map snd . HMS.toList . gamePlayers
+gameViewForPlayer self game =
+    let opponents = map snd . HMS.toList . HMS.delete self $ game ^. gamePlayers
+        name = fromMaybe "" $ game ^. gamePlayers . at self in
+    GameView
+        { gameViewOpponents  = opponents
+        , gameViewPlayerName = name
+        }

@@ -9,16 +9,23 @@ import Set exposing (Set)
 
 
 type alias GameView  =
-   { players: (List String)
+   { opponents: (List String)
+   , playerName: String
    }
 
 jsonDecGameView : Json.Decode.Decoder ( GameView )
 jsonDecGameView =
-   Json.Decode.succeed (\pplayers -> {players = pplayers}) |> custom (Json.Decode.list (Json.Decode.string))
+   Json.Decode.succeed (\popponents pplayerName -> {opponents = popponents, playerName = pplayerName})
+   |> required "opponents" (Json.Decode.list (Json.Decode.string))
+   |> required "playerName" (Json.Decode.string)
 
 jsonEncGameView : GameView -> Value
 jsonEncGameView  val =
-   (Json.Encode.list Json.Encode.string) val.players
+   Json.Encode.object
+   [ ("opponents", (Json.Encode.list Json.Encode.string) val.opponents)
+   , ("playerName", Json.Encode.string val.playerName)
+   ]
+
 
 
 type ServerMessage  =
@@ -42,5 +49,19 @@ jsonEncServerMessage  val =
                     SyncGameView v1 -> ("SyncGameView", encodeValue (jsonEncGameView v1))
                     Bye  -> ("Bye", encodeValue (Json.Encode.list identity []))
     in encodeSumObjectWithSingleField keyval val
+
+
+
+type ClientMessage  =
+    ChangeName String
+
+jsonDecClientMessage : Json.Decode.Decoder ( ClientMessage )
+jsonDecClientMessage =
+    Json.Decode.lazy (\_ -> Json.Decode.map ChangeName (Json.Decode.string))
+
+
+jsonEncClientMessage : ClientMessage -> Value
+jsonEncClientMessage (ChangeName v1) =
+    Json.Encode.string v1
 
 
