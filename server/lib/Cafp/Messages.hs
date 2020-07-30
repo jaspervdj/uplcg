@@ -1,6 +1,8 @@
 {-# LANGUAGE TemplateHaskell #-}
 module Cafp.Messages
-    ( GameView (..)
+    ( BlackCard (..)
+    , WhiteCard (..)
+    , GameView (..)
     , ServerMessage (..)
     , ClientMessage (..)
     ) where
@@ -8,10 +10,15 @@ module Cafp.Messages
 import           Data.Text  (Text)
 import           Elm.Derive
 
+data BlackCard = BlackCard Text deriving (Show)
+
+data WhiteCard = WhiteCard Text deriving (Show)
+
 data GameView = GameView
     { gameViewOpponents :: [Text]
     , gameViewMyName    :: Text
-    , gameViewBlackCard :: Maybe Text
+    , gameViewBlackCard :: Maybe BlackCard
+    , gameViewHand      :: [WhiteCard]
     } deriving (Show)
 
 data ServerMessage
@@ -24,6 +31,8 @@ data ClientMessage
     = ChangeMyName Text
     deriving (Show)
 
+deriveBoth defaultOptions ''BlackCard
+deriveBoth defaultOptions ''WhiteCard
 deriveBoth (defaultOptionsDropLower 8) ''GameView
 deriveBoth defaultOptions ''ServerMessage
 deriveBoth defaultOptions ''ClientMessage

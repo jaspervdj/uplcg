@@ -8,25 +8,56 @@ import Dict exposing (Dict)
 import Set exposing (Set)
 
 
+type BlackCard  =
+    BlackCard String
+
+jsonDecBlackCard : Json.Decode.Decoder ( BlackCard )
+jsonDecBlackCard =
+    Json.Decode.lazy (\_ -> Json.Decode.map BlackCard (Json.Decode.string))
+
+
+jsonEncBlackCard : BlackCard -> Value
+jsonEncBlackCard (BlackCard v1) =
+    Json.Encode.string v1
+
+
+
+type WhiteCard  =
+    WhiteCard String
+
+jsonDecWhiteCard : Json.Decode.Decoder ( WhiteCard )
+jsonDecWhiteCard =
+    Json.Decode.lazy (\_ -> Json.Decode.map WhiteCard (Json.Decode.string))
+
+
+jsonEncWhiteCard : WhiteCard -> Value
+jsonEncWhiteCard (WhiteCard v1) =
+    Json.Encode.string v1
+
+
+
 type alias GameView  =
    { opponents: (List String)
    , myName: String
-   , blackCard: (Maybe String)
+   , blackCard: (Maybe BlackCard)
+   , hand: (List WhiteCard)
    }
 
 jsonDecGameView : Json.Decode.Decoder ( GameView )
 jsonDecGameView =
-   Json.Decode.succeed (\popponents pmyName pblackCard -> {opponents = popponents, myName = pmyName, blackCard = pblackCard})
+   Json.Decode.succeed (\popponents pmyName pblackCard phand -> {opponents = popponents, myName = pmyName, blackCard = pblackCard, hand = phand})
    |> required "opponents" (Json.Decode.list (Json.Decode.string))
    |> required "myName" (Json.Decode.string)
-   |> fnullable "blackCard" (Json.Decode.string)
+   |> fnullable "blackCard" (jsonDecBlackCard)
+   |> required "hand" (Json.Decode.list (jsonDecWhiteCard))
 
 jsonEncGameView : GameView -> Value
 jsonEncGameView  val =
    Json.Encode.object
    [ ("opponents", (Json.Encode.list Json.Encode.string) val.opponents)
    , ("myName", Json.Encode.string val.myName)
-   , ("blackCard", (maybeEncode (Json.Encode.string)) val.blackCard)
+   , ("blackCard", (maybeEncode (jsonEncBlackCard)) val.blackCard)
+   , ("hand", (Json.Encode.list jsonEncWhiteCard) val.hand)
    ]
 
 

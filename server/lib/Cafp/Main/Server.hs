@@ -46,8 +46,8 @@ data Server = Server
 
 readCards :: IO Cards
 readCards = Cards
-    <$> fmap T.lines (T.readFile "assets/black.txt")
-    <*> fmap T.lines (T.readFile "assets/white.txt")
+    <$> fmap (map BlackCard . T.lines) (T.readFile "assets/black.txt")
+    <*> fmap (map WhiteCard . T.lines) (T.readFile "assets/white.txt")
 
 newServer :: IO Server
 newServer = Server <$> readCards <*> atomically (STM.newTVar HMS.empty)

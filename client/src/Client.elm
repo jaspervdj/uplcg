@@ -70,15 +70,21 @@ view model = case model of
         ] ++
         (case game.view.blackCard of
             Nothing -> []
-            Just c -> [blackCard c])
+            Just c -> [blackCard c]) ++
+        (List.map whiteCard game.view.hand)
 
-blackCard : String -> Html a
-blackCard string =
+blackCard : Messages.BlackCard -> Html a
+blackCard (Messages.BlackCard string) =
     let blank = Html.span [Html.Attributes.class "blank"] [] in
-    Html.div [Html.Attributes.class "black"] <|
+    Html.div [Html.Attributes.class "card", Html.Attributes.class "black"] <|
     List.intersperse blank <|
     List.map Html.text <|
     String.split "\\BLANK" string
+
+whiteCard : Messages.WhiteCard -> Html a
+whiteCard (Messages.WhiteCard string) = Html.div
+    [Html.Attributes.class "card", Html.Attributes.class "white"]
+    [Html.text string]
 
 subscriptions : Model -> Sub Msg
 subscriptions model = webSocketIn WebSocketIn

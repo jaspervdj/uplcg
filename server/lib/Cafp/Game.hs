@@ -26,8 +26,8 @@ import qualified Data.Text           as T
 type PlayerId = Int
 
 data Cards = Cards
-    { _cardsBlack :: [T.Text]
-    , _cardsWhite :: [T.Text]
+    { _cardsBlack :: [BlackCard]
+    , _cardsWhite :: [WhiteCard]
     } deriving (Show)
 
 data Game = Game
@@ -50,7 +50,6 @@ joinGame game =
     , game & gameNextPlayerId %~ succ & gamePlayers %~ HMS.insert pid name
     )
 
-
 leaveGame :: PlayerId -> Game -> Game
 leaveGame pid = over gamePlayers $ HMS.delete pid
 
@@ -67,4 +66,5 @@ gameViewForPlayer self game =
         { gameViewOpponents = opponents
         , gameViewMyName    = name
         , gameViewBlackCard = game ^? gameCards . cardsBlack . ix 0
+        , gameViewHand      = take 10 $ game ^. gameCards . cardsWhite
         }

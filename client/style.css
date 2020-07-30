@@ -2,11 +2,20 @@ html {
   font-size: 18px;
 }
 
+.card {
+  padding: 18px;
+  border-radius: 18px;
+}
+
 .black {
   color: white;
   background: black;
-  padding: 18px;
-  border-radius: 18px;
+}
+
+.white {
+  color: black;
+  background: white;
+  border: 2px solid black;
 }
 
 .blank {
