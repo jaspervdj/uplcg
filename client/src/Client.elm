@@ -51,16 +51,22 @@ view model = case model of
             (\p -> Html.li [] [Html.text p])
             game.view.opponents
         , Html.h1 [] [Html.text "You"]
-        , Html.input
-            [ Html.Attributes.value game.changeMyName
-            , Html.Events.onInput ChangeMyName
+        , Html.form
+            [ Html.Attributes.action ""
+            , Html.Events.onSubmit SubmitMyName
             ]
-            []
-        , Html.button
-            [ Html.Events.onClick SubmitMyName
-            , Html.Attributes.disabled <| game.view.myName == game.changeMyName
+            [ Html.input
+                [ Html.Attributes.value game.changeMyName
+                , Html.Events.onInput ChangeMyName
+                ]
+                []
+            , Html.button
+                [ Html.Attributes.type_ "submit"
+                , Html.Attributes.disabled <|
+                    game.view.myName == game.changeMyName
+                ]
+                [Html.text "change"]
             ]
-            [Html.text "change"]
         ]
 
 subscriptions : Model -> Sub Msg
