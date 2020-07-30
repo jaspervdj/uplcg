@@ -3,7 +3,7 @@ port module Client exposing (main)
 import Browser
 import Html exposing (Html)
 import Json.Decode
-import Messages
+import Messages exposing (GameView)
 import Url exposing (Url)
 
 port webSocketIn : (String -> msg) -> Sub msg
@@ -18,6 +18,9 @@ type Model
     = Error String
     | Connecting
         { roomId : String
+        }
+    | Game
+        { view : GameView
         }
 
 parseRoomId : Url -> Result String String
@@ -35,6 +38,13 @@ view model = case model of
         [ Html.h1 []
             [Html.text <| "Connecting to room " ++ state.roomId ++ "..."]
         ]
+    Game game ->
+        [ Html.h1 [] [Html.text "Players"]
+        , Html.ul [] <| List.map
+            (\p -> Html.li [] [Html.text p])
+            game.view.players
+        ]
+
 
 subscriptions : Model -> Sub Msg
 subscriptions model = webSocketIn WebSocketIn
@@ -49,6 +59,8 @@ update msg model = case msg of
             Ok (Messages.Welcome playerId) ->
                 Debug.log ("Welcome " ++ String.fromInt playerId) (model, Cmd.none)
             Ok Messages.Bye -> Debug.log "Bye" (model, Cmd.none)
+            Ok (Messages.SyncGameView gameView) ->
+                (Game {view = gameView}, Cmd.none)
 
 main : Program () Model Msg
 main = Browser.application

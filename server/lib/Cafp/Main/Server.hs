@@ -3,17 +3,20 @@ module Cafp.Main.Server
     ( main
     ) where
 
+import           Cafp.Game
 import           Cafp.Messages
 import           Control.Concurrent             (threadDelay)
-import Control.Exception (bracket)
 import           Control.Concurrent.STM         (STM, TVar, atomically)
-import           qualified Control.Concurrent.STM         as STM
+import qualified Control.Concurrent.STM         as STM
+import           Control.Exception              (bracket)
 import           Control.Monad                  (forever, when)
 import qualified Data.Aeson                     as Aeson
+import qualified Data.ByteString                as B
+import qualified Data.ByteString.Lazy           as BL
+import           Data.Foldable                  (for_)
 import qualified Data.HashMap.Strict            as HMS
 import           Data.Text                      (Text)
 import qualified Data.Text                      as T
-import qualified Data.ByteString as B
 import qualified Data.Text.Encoding             as T
 import qualified Data.Text.Lazy                 as TL
 import qualified Network.Wai                    as Wai
@@ -24,24 +27,22 @@ import qualified Web.Scotty                     as Scotty
 
 type RoomId = T.Text
 
-type PlayerId = Int
-
-type Sink = B.ByteString -> IO ()
+type Sink = BL.ByteString -> IO ()
 
 data Room = Room
-    { roomSinks :: TVar (HMS.HashMap PlayerId Sink)
+    { roomGame    :: TVar Game
+    , roomSinks   :: TVar (HMS.HashMap PlayerId Sink)
     }
 
 data Server = Server
-    { serverRooms        :: TVar (HMS.HashMap RoomId Room)
-    , serverNextPlayerId :: TVar Int
+    { serverRooms :: TVar (HMS.HashMap RoomId Room)
     }
 
 newServer :: STM Server
-newServer = Server <$> STM.newTVar HMS.empty <*> STM.newTVar 0
+newServer = Server <$> STM.newTVar HMS.empty
 
 newRoom :: STM Room
-newRoom = Room <$> STM.newTVar HMS.empty
+newRoom = Room <$> STM.newTVar newGame <*> STM.newTVar HMS.empty
 
 scottyApp :: IO Wai.Application
 scottyApp = Scotty.scottyApp $ do
@@ -63,9 +64,6 @@ routePendingConnection pending =
         [_, "rooms", roomId, "events"] -> Just roomId
         _                              -> Nothing
 
-newPlayerId :: Server -> STM PlayerId
-newPlayerId s = STM.stateTVar (serverNextPlayerId s) $ \x -> (x, x + 1)
-
 getOrCreateRoom :: Server -> RoomId -> STM Room
 getOrCreateRoom server roomId = do
     rooms <- STM.readTVar $ serverRooms server
@@ -76,27 +74,41 @@ getOrCreateRoom server roomId = do
             STM.writeTVar (serverRooms server) $ HMS.insert roomId room rooms
             pure room
 
-joinPlayer :: Room -> PlayerId -> Sink -> STM ()
-joinPlayer room pid sink = STM.modifyTVar (roomSinks room) $ HMS.insert pid sink
+joinRoom :: Room -> Sink -> STM PlayerId
+joinRoom room sink = do
+    pid <- STM.stateTVar (roomGame room) joinGame
+    STM.modifyTVar' (roomSinks room) $ HMS.insert pid sink
+    pure pid
 
-leavePlayer :: Room -> PlayerId -> STM ()
-leavePlayer room pid = STM.modifyTVar (roomSinks room) $ HMS.delete pid
+leaveRoom :: Room -> PlayerId -> STM ()
+leaveRoom room pid = do
+    STM.modifyTVar' (roomGame room) $ leaveGame pid
+    STM.modifyTVar' (roomSinks room) $ HMS.delete pid
+
+syncRoom :: Room -> IO ()
+syncRoom room = do
+    (game, sinks) <- atomically $ (,)
+        <$> STM.readTVar (roomGame room)
+        <*> STM.readTVar (roomSinks room)
+    for_ (HMS.toList sinks) $ \(pid, sink) ->
+        sink . Aeson.encode . SyncGameView $ gameViewForPlayer pid game
 
 wsApp :: Server -> WS.ServerApp
 wsApp server pc = case routePendingConnection pc of
     Nothing -> WS.rejectRequest pc "Invalid URL"
     Just roomId -> do
-        playerId <- atomically $ newPlayerId server
         room <- atomically $ getOrCreateRoom server roomId
         conn <- WS.acceptRequest pc
-        WS.withPingThread conn 30 (pure ()) $ do
-            WS.sendTextData conn $ Aeson.encode $ Welcome playerId
-            bracket
-                (atomically $ joinPlayer room playerId (WS.sendTextData conn))
-                (\() -> atomically $ leavePlayer room playerId)
-                (\() -> loop conn)
+        WS.withPingThread conn 30 (pure ()) $ bracket
+            (atomically $ joinRoom room (WS.sendTextData conn))
+            (\playerId -> do
+                atomically $ leaveRoom room playerId
+                syncRoom room)
+            (\playerId -> do
+                syncRoom room
+                loop conn roomId playerId)
   where
-    loop conn = forever $ do
+    loop conn roomId playerId = forever $ do
         WS.sendTextData conn $ Aeson.encode Bye
         threadDelay $ 1 * 1000000
 

@@ -10,5 +10,6 @@ import           Elm.Module
 
 main :: IO ()
 main = putStrLn $ makeElmModule "Messages"
-    [ DefineElm (Proxy :: Proxy ServerMessage)
+    [ DefineElm (Proxy :: Proxy GameView)
+    , DefineElm (Proxy :: Proxy ServerMessage)
     ]

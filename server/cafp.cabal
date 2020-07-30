@@ -16,6 +16,7 @@ Library
   Hs-source-dirs:   lib
 
   Exposed-modules:
+    Cafp.Game
     Cafp.Messages
     Cafp.Main.GenerateElmTypes
     Cafp.Main.Server
