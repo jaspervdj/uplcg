@@ -27,16 +27,26 @@ import qualified Data.Text           as T
 
 type PlayerId = Int
 
+data Table
+    = TableProposing BlackCard (HMS.HashMap PlayerId WhiteCard)
+    deriving (Show)
+
 data Game = Game
     { _gameCards        :: !Cards
-    , _gamePlayers      :: !(HMS.HashMap Int Text)
+    , _gamePlayers      :: !(HMS.HashMap PlayerId Text)
+    , _gameTable        :: !Table
     , _gameNextPlayerId :: !Int
     } deriving (Show)
 
 makeLenses ''Game
 
 newGame :: Cards -> Game
-newGame cards = Game cards HMS.empty 1
+newGame cards = Game
+    { _gameCards        = cards
+    , _gamePlayers      = HMS.empty
+    , _gameTable        = TableProposing (BlackCard 0) HMS.empty
+    , _gameNextPlayerId = 1
+    }
 
 joinGame :: Game -> (PlayerId, Game)
 joinGame game =
@@ -57,10 +67,14 @@ processClientMessage pid msg game = case msg of
 gameViewForPlayer :: PlayerId -> Game -> GameView
 gameViewForPlayer self game =
     let opponents = map snd . HMS.toList . HMS.delete self $ game ^. gamePlayers
-        name = fromMaybe "" $ game ^. gamePlayers . at self in
+        name = fromMaybe "" $ game ^. gamePlayers . at self
+
+        table = case game ^. gameTable of
+            TableProposing black proposals ->
+                Proposing black (HMS.lookup self proposals) in
     GameView
         { gameViewOpponents = opponents
         , gameViewMyName    = name
-        , gameViewBlackCard = Just $ BlackCard 0
+        , gameViewTable     = table
         , gameViewHand      = [WhiteCard x | x <- [0 .. 9]]
         }

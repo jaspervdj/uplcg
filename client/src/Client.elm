@@ -72,10 +72,16 @@ view model = case model of
                 [Html.text "change"]
             ]
         ] ++
-        (case game.view.blackCard of
-            Nothing -> []
-            Just c -> [blackCard game.cards c]) ++
+        [viewTable game.cards game.view.table] ++
         (List.map (whiteCard game.cards) game.view.hand)
+
+viewTable : Cards -> Messages.TableView -> Html a
+viewTable cards (Messages.Proposing c my) = Html.div [] <|
+    [ blackCard cards c
+    ] ++
+    (case my of
+        Nothing -> []
+        Just mc -> [whiteCard cards mc])
 
 blackCard : Cards -> Messages.BlackCard -> Html a
 blackCard cards (Messages.BlackCard idx) =

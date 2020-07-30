@@ -3,6 +3,7 @@ module Cafp.Messages
     ( BlackCard (..)
     , WhiteCard (..)
     , Cards (..)
+    , TableView (..)
     , GameView (..)
     , ServerMessage (..)
     , ClientMessage (..)
@@ -20,10 +21,14 @@ data Cards = Cards
     , cardsWhite :: [Text]
     } deriving (Show)
 
+data TableView
+    = Proposing BlackCard (Maybe WhiteCard)
+    deriving (Show)
+
 data GameView = GameView
     { gameViewOpponents :: [Text]
     , gameViewMyName    :: Text
-    , gameViewBlackCard :: Maybe BlackCard
+    , gameViewTable     :: TableView
     , gameViewHand      :: [WhiteCard]
     } deriving (Show)
 
@@ -41,6 +46,7 @@ data ClientMessage
 deriveBoth defaultOptions ''BlackCard
 deriveBoth defaultOptions ''WhiteCard
 deriveBoth (defaultOptionsDropLower 5) ''Cards
+deriveBoth defaultOptions ''TableView
 deriveBoth (defaultOptionsDropLower 8) ''GameView
 deriveBoth defaultOptions ''ServerMessage
 deriveBoth defaultOptions ''ClientMessage

@@ -56,19 +56,33 @@ jsonEncCards  val =
 
 
 
+type TableView  =
+    Proposing BlackCard (Maybe WhiteCard)
+
+jsonDecTableView : Json.Decode.Decoder ( TableView )
+jsonDecTableView =
+    Json.Decode.lazy (\_ -> Json.Decode.map2 Proposing (Json.Decode.index 0 (jsonDecBlackCard)) (Json.Decode.index 1 (Json.Decode.maybe (jsonDecWhiteCard))))
+
+
+jsonEncTableView : TableView -> Value
+jsonEncTableView (Proposing v1 v2) =
+    Json.Encode.list identity [jsonEncBlackCard v1, (maybeEncode (jsonEncWhiteCard)) v2]
+
+
+
 type alias GameView  =
    { opponents: (List String)
    , myName: String
-   , blackCard: (Maybe BlackCard)
+   , table: TableView
    , hand: (List WhiteCard)
    }
 
 jsonDecGameView : Json.Decode.Decoder ( GameView )
 jsonDecGameView =
-   Json.Decode.succeed (\popponents pmyName pblackCard phand -> {opponents = popponents, myName = pmyName, blackCard = pblackCard, hand = phand})
+   Json.Decode.succeed (\popponents pmyName ptable phand -> {opponents = popponents, myName = pmyName, table = ptable, hand = phand})
    |> required "opponents" (Json.Decode.list (Json.Decode.string))
    |> required "myName" (Json.Decode.string)
-   |> fnullable "blackCard" (jsonDecBlackCard)
+   |> required "table" (jsonDecTableView)
    |> required "hand" (Json.Decode.list (jsonDecWhiteCard))
 
 jsonEncGameView : GameView -> Value
@@ -76,7 +90,7 @@ jsonEncGameView  val =
    Json.Encode.object
    [ ("opponents", (Json.Encode.list Json.Encode.string) val.opponents)
    , ("myName", Json.Encode.string val.myName)
-   , ("blackCard", (maybeEncode (jsonEncBlackCard)) val.blackCard)
+   , ("table", jsonEncTableView val.table)
    , ("hand", (Json.Encode.list jsonEncWhiteCard) val.hand)
    ]
 
