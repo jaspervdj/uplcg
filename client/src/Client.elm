@@ -1,9 +1,10 @@
 port module Client exposing (main)
 
+import Array exposing (Array)
 import Browser
-import Html exposing (Html)
 import Html.Attributes
 import Html.Events
+import Html exposing (Html)
 import Json.Decode
 import Json.Encode
 import Messages exposing (GameView)
@@ -20,13 +21,16 @@ type Msg
     | ChangeMyName String
     | SubmitMyName
 
+type alias Cards = {black : Array String, white : Array String}
+
 type Model
     = Error String
     | Connecting
         { roomId : String
         }
     | Game
-        { view : GameView
+        { cards : Cards
+        , view : GameView
         , changeMyName : String
         }
 
@@ -70,21 +74,21 @@ view model = case model of
         ] ++
         (case game.view.blackCard of
             Nothing -> []
-            Just c -> [blackCard c]) ++
-        (List.map whiteCard game.view.hand)
+            Just c -> [blackCard game.cards c]) ++
+        (List.map (whiteCard game.cards) game.view.hand)
 
-blackCard : Messages.BlackCard -> Html a
-blackCard (Messages.BlackCard string) =
+blackCard : Cards -> Messages.BlackCard -> Html a
+blackCard cards (Messages.BlackCard idx) =
     let blank = Html.span [Html.Attributes.class "blank"] [] in
     Html.div [Html.Attributes.class "card", Html.Attributes.class "black"] <|
-    List.intersperse blank <|
-    List.map Html.text <|
-    String.split "\\BLANK" string
+    List.intersperse blank <| List.map Html.text <|
+    String.split "\\BLANK" <| Maybe.withDefault "" <|
+    Array.get idx cards.black
 
-whiteCard : Messages.WhiteCard -> Html a
-whiteCard (Messages.WhiteCard string) = Html.div
+whiteCard : Cards -> Messages.WhiteCard -> Html a
+whiteCard cards (Messages.WhiteCard idx) = Html.div
     [Html.Attributes.class "card", Html.Attributes.class "white"]
-    [Html.text string]
+    [Html.text <| Maybe.withDefault "" <| Array.get idx cards.white]
 
 subscriptions : Model -> Sub Msg
 subscriptions model = webSocketIn WebSocketIn
@@ -107,11 +111,20 @@ update msg model = case msg of
                     Game game -> (Game {game | view = gameView}, Cmd.none)
                     _ ->
                         ( Game
-                            { view = gameView
+                            { cards = {black = Array.empty, white = Array.empty}
+                            , view = gameView
                             , changeMyName = gameView.myName
                             }
                         , Cmd.none
                         )
+            Ok (Messages.SyncCards cards) ->
+                let arr =
+                        { black = Array.fromList cards.black
+                        , white = Array.fromList cards.white
+                        } in
+                case model of
+                    Game game -> (Game {game | cards = arr}, Cmd.none)
+                    _ -> (model, Cmd.none)
 
     ChangeMyName name -> case model of
         Game game -> (Game {game | changeMyName = name}, Cmd.none)

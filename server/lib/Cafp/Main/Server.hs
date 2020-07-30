@@ -9,6 +9,7 @@ import           Control.Concurrent             (threadDelay)
 import           Control.Concurrent.STM         (STM, TVar, atomically)
 import qualified Control.Concurrent.STM         as STM
 import           Control.Exception              (bracket)
+import           Control.Lens                   ((^.))
 import           Control.Monad                  (forever, when)
 import qualified Data.Aeson                     as Aeson
 import qualified Data.ByteString                as B
@@ -20,6 +21,7 @@ import qualified Data.Text                      as T
 import qualified Data.Text.Encoding             as T
 import qualified Data.Text.IO                   as T
 import qualified Data.Text.Lazy                 as TL
+import qualified Data.Vector                    as V
 import qualified Network.Wai                    as Wai
 import qualified Network.Wai.Handler.Warp       as Warp
 import qualified Network.Wai.Handler.WebSockets as WaiWs
@@ -46,8 +48,11 @@ data Server = Server
 
 readCards :: IO Cards
 readCards = Cards
-    <$> fmap (map BlackCard . T.lines) (T.readFile "assets/black.txt")
-    <*> fmap (map WhiteCard . T.lines) (T.readFile "assets/white.txt")
+    <$> fmap parseCards (T.readFile "assets/black.txt")
+    <*> fmap parseCards (T.readFile "assets/white.txt")
+  where
+    parseCards =
+        filter (not . T.isPrefixOf "#") . filter (not . T.null) . T.lines
 
 newServer :: IO Server
 newServer = Server <$> readCards <*> atomically (STM.newTVar HMS.empty)
@@ -117,13 +122,17 @@ wsApp server pc = case routePendingConnection pc of
     Just roomId -> do
         room <- atomically $ getOrCreateRoom server roomId
         conn <- WS.acceptRequest pc
+        let sink = WS.sendTextData conn
         WS.withPingThread conn 30 (pure ()) $ bracket
-            (atomically $ joinRoom room (WS.sendTextData conn))
+            (atomically $ joinRoom room sink)
             (\playerId -> do
                 atomically $ leaveRoom room playerId
                 syncRoom room)
             (\playerId -> do
                 syncRoom room
+                cards <- fmap (^. gameCards) . atomically . STM.readTVar $
+                    roomGame room
+                sink . Aeson.encode $ SyncCards cards
                 loop conn roomId playerId)
   where
     loop conn roomId playerId = forever $ do

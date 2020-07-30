@@ -12,6 +12,7 @@ main :: IO ()
 main = putStrLn $ makeElmModule "Messages"
     [ DefineElm (Proxy :: Proxy BlackCard)
     , DefineElm (Proxy :: Proxy WhiteCard)
+    , DefineElm (Proxy :: Proxy Cards)
     , DefineElm (Proxy :: Proxy GameView)
     , DefineElm (Proxy :: Proxy ServerMessage)
     , DefineElm (Proxy :: Proxy ClientMessage)

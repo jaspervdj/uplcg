@@ -2,6 +2,7 @@
 module Cafp.Messages
     ( BlackCard (..)
     , WhiteCard (..)
+    , Cards (..)
     , GameView (..)
     , ServerMessage (..)
     , ClientMessage (..)
@@ -10,9 +11,14 @@ module Cafp.Messages
 import           Data.Text  (Text)
 import           Elm.Derive
 
-data BlackCard = BlackCard Text deriving (Show)
+data BlackCard = BlackCard Int deriving (Show)
 
-data WhiteCard = WhiteCard Text deriving (Show)
+data WhiteCard = WhiteCard Int deriving (Show)
+
+data Cards = Cards
+    { cardsBlack :: [Text]
+    , cardsWhite :: [Text]
+    } deriving (Show)
 
 data GameView = GameView
     { gameViewOpponents :: [Text]
@@ -23,6 +29,7 @@ data GameView = GameView
 
 data ServerMessage
     = Welcome Int
+    | SyncCards Cards
     | SyncGameView GameView
     | Bye
     deriving (Show)
@@ -33,6 +40,7 @@ data ClientMessage
 
 deriveBoth defaultOptions ''BlackCard
 deriveBoth defaultOptions ''WhiteCard
+deriveBoth (defaultOptionsDropLower 5) ''Cards
 deriveBoth (defaultOptionsDropLower 8) ''GameView
 deriveBoth defaultOptions ''ServerMessage
 deriveBoth defaultOptions ''ClientMessage

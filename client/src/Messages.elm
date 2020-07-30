@@ -9,30 +9,50 @@ import Set exposing (Set)
 
 
 type BlackCard  =
-    BlackCard String
+    BlackCard Int
 
 jsonDecBlackCard : Json.Decode.Decoder ( BlackCard )
 jsonDecBlackCard =
-    Json.Decode.lazy (\_ -> Json.Decode.map BlackCard (Json.Decode.string))
+    Json.Decode.lazy (\_ -> Json.Decode.map BlackCard (Json.Decode.int))
 
 
 jsonEncBlackCard : BlackCard -> Value
 jsonEncBlackCard (BlackCard v1) =
-    Json.Encode.string v1
+    Json.Encode.int v1
 
 
 
 type WhiteCard  =
-    WhiteCard String
+    WhiteCard Int
 
 jsonDecWhiteCard : Json.Decode.Decoder ( WhiteCard )
 jsonDecWhiteCard =
-    Json.Decode.lazy (\_ -> Json.Decode.map WhiteCard (Json.Decode.string))
+    Json.Decode.lazy (\_ -> Json.Decode.map WhiteCard (Json.Decode.int))
 
 
 jsonEncWhiteCard : WhiteCard -> Value
 jsonEncWhiteCard (WhiteCard v1) =
-    Json.Encode.string v1
+    Json.Encode.int v1
+
+
+
+type alias Cards  =
+   { black: (List String)
+   , white: (List String)
+   }
+
+jsonDecCards : Json.Decode.Decoder ( Cards )
+jsonDecCards =
+   Json.Decode.succeed (\pblack pwhite -> {black = pblack, white = pwhite})
+   |> required "black" (Json.Decode.list (Json.Decode.string))
+   |> required "white" (Json.Decode.list (Json.Decode.string))
+
+jsonEncCards : Cards -> Value
+jsonEncCards  val =
+   Json.Encode.object
+   [ ("black", (Json.Encode.list Json.Encode.string) val.black)
+   , ("white", (Json.Encode.list Json.Encode.string) val.white)
+   ]
 
 
 
@@ -64,6 +84,7 @@ jsonEncGameView  val =
 
 type ServerMessage  =
     Welcome Int
+    | SyncCards Cards
     | SyncGameView GameView
     | Bye 
 
@@ -71,6 +92,7 @@ jsonDecServerMessage : Json.Decode.Decoder ( ServerMessage )
 jsonDecServerMessage =
     let jsonDecDictServerMessage = Dict.fromList
             [ ("Welcome", Json.Decode.lazy (\_ -> Json.Decode.map Welcome (Json.Decode.int)))
+            , ("SyncCards", Json.Decode.lazy (\_ -> Json.Decode.map SyncCards (jsonDecCards)))
             , ("SyncGameView", Json.Decode.lazy (\_ -> Json.Decode.map SyncGameView (jsonDecGameView)))
             , ("Bye", Json.Decode.lazy (\_ -> Json.Decode.succeed Bye))
             ]
@@ -80,6 +102,7 @@ jsonEncServerMessage : ServerMessage -> Value
 jsonEncServerMessage  val =
     let keyval v = case v of
                     Welcome v1 -> ("Welcome", encodeValue (Json.Encode.int v1))
+                    SyncCards v1 -> ("SyncCards", encodeValue (jsonEncCards v1))
                     SyncGameView v1 -> ("SyncGameView", encodeValue (jsonEncGameView v1))
                     Bye  -> ("Bye", encodeValue (Json.Encode.list identity []))
     in encodeSumObjectWithSingleField keyval val
