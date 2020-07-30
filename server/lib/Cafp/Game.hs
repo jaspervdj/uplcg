@@ -48,7 +48,7 @@ leaveGame pid = over gamePlayers $ HMS.delete pid
 
 processClientMessage :: PlayerId -> ClientMessage -> Game -> Game
 processClientMessage pid msg game = case msg of
-    ChangeName name ->
+    ChangeMyName name ->
         game & gamePlayers . ix pid .~ name
 
 gameViewForPlayer :: PlayerId -> Game -> GameView
@@ -56,6 +56,6 @@ gameViewForPlayer self game =
     let opponents = map snd . HMS.toList . HMS.delete self $ game ^. gamePlayers
         name = fromMaybe "" $ game ^. gamePlayers . at self in
     GameView
-        { gameViewOpponents  = opponents
-        , gameViewPlayerName = name
+        { gameViewOpponents = opponents
+        , gameViewMyName    = name
         }

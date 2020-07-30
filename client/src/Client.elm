@@ -17,9 +17,8 @@ type Msg
     | Send
     | WebSocketIn String
     -- Name changes
-    | StartChangingName
-    | ChangeName String
-    | SubmitNewName
+    | ChangeMyName String
+    | SubmitMyName
 
 type Model
     = Error String
@@ -28,7 +27,7 @@ type Model
         }
     | Game
         { view : GameView
-        , changingName : Maybe String
+        , changeMyName : String
         }
 
 parseRoomId : Url -> Result String String
@@ -52,26 +51,17 @@ view model = case model of
             (\p -> Html.li [] [Html.text p])
             game.view.opponents
         , Html.h1 [] [Html.text "You"]
-        ] ++
-        (case game.changingName of
-            Nothing ->
-                [ Html.p []
-                    [Html.text game.view.playerName]
-                , Html.button
-                    [Html.Events.onClick StartChangingName]
-                    [Html.text "change"]
-                ]
-            Just name ->
-                [ Html.input
-                    [ Html.Attributes.value name
-                    , Html.Events.onInput ChangeName
-                    ]
-                    []
-                , Html.button
-                    [Html.Events.onClick SubmitNewName]
-                    [Html.text "change"]
-                ])
-
+        , Html.input
+            [ Html.Attributes.value game.changeMyName
+            , Html.Events.onInput ChangeMyName
+            ]
+            []
+        , Html.button
+            [ Html.Events.onClick SubmitMyName
+            , Html.Attributes.disabled <| game.view.myName == game.changeMyName
+            ]
+            [Html.text "change"]
+        ]
 
 subscriptions : Model -> Sub Msg
 subscriptions model = webSocketIn WebSocketIn
@@ -95,25 +85,16 @@ update msg model = case msg of
                     _ ->
                         ( Game
                             { view = gameView
-                            , changingName = Nothing
+                            , changeMyName = gameView.myName
                             }
                         , Cmd.none
                         )
 
-    StartChangingName -> case model of
-        Game game ->
-            (Game {game | changingName = Just game.view.playerName}, Cmd.none)
+    ChangeMyName name -> case model of
+        Game game -> (Game {game | changeMyName = name}, Cmd.none)
         _ -> (model, Cmd.none)
-    ChangeName name -> case model of
-        Game game -> (Game {game | changingName = Just name}, Cmd.none)
-        _ -> (model, Cmd.none)
-    SubmitNewName -> case model of
-        Game game ->
-            ( Game {game | changingName = Nothing}
-            , case game.changingName of
-                Nothing   -> Cmd.none
-                Just name -> send <| Messages.ChangeName name
-            )
+    SubmitMyName -> case model of
+        Game game -> (model , send <| Messages.ChangeMyName game.changeMyName)
         _ -> (model, Cmd.none)
 
 main : Program () Model Msg

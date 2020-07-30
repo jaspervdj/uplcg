@@ -9,8 +9,8 @@ import           Data.Text  (Text)
 import           Elm.Derive
 
 data GameView = GameView
-    { gameViewOpponents  :: [Text]
-    , gameViewPlayerName :: Text
+    { gameViewOpponents :: [Text]
+    , gameViewMyName    :: Text
     } deriving (Show)
 
 data ServerMessage
@@ -20,7 +20,7 @@ data ServerMessage
     deriving (Show)
 
 data ClientMessage
-    = ChangeName Text
+    = ChangeMyName Text
     deriving (Show)
 
 deriveBoth (defaultOptionsDropLower 8) ''GameView
