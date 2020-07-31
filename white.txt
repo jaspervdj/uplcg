@@ -1,3 +1,9 @@
+# ICFP2020 Cards
+A Monad
+A Monoid
+Endofunctors
+
+# CardsAgainstCryptography cards.
 100\% talks, \\ 0\% human interaction.
 16-bit AES.
 17 slides for a 3-minute rump session talk.
