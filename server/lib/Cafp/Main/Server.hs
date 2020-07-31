@@ -54,8 +54,8 @@ readCards = Cards
     <$> fmap parseCards (T.readFile "assets/black.txt")
     <*> fmap parseCards (T.readFile "assets/white.txt")
   where
-    parseCards = V.fromList .
-        filter (not . T.isPrefixOf "#") . filter (not . T.null) . T.lines
+    parseCards  = V.fromList . filter (not . T.null) . map dropComment . T.lines
+    dropComment = T.strip . fst . T.break (== '#')
 
 newServer :: IO Server
 newServer = Server <$> readCards <*> MVar.newMVar HMS.empty

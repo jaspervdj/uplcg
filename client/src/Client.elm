@@ -132,16 +132,24 @@ blackCardContent cards (Messages.BlackCard idx) =
 blackCardBlanks : Cards -> BlackCard -> Int
 blackCardBlanks cards c = List.length (blackCardContent cards c) - 1
 
+capitalizeFirst : List String -> List String
+capitalizeFirst l = case l of
+    x :: xs -> (String.toUpper (String.left 1 x) ++ String.dropLeft 1 x) :: xs
+    _ -> l
+
 blackCard : Cards -> BlackCard -> List WhiteCard -> Html a
 blackCard cards black whites =
-    let blank mbWhite = Html.span
-            [Html.Attributes.class "blank"] <|
-            case mbWhite of
-                Nothing -> []
-                Just w -> [Html.text <| whiteCardContent cards w] in
+    let blackParts = blackCardContent cards black
+        whiteParts = List.map (whiteCardContent cards) whites |>
+            case blackParts of
+                "" :: _ -> capitalizeFirst
+                _ -> identity
+        blank txt = Html.span
+            [Html.Attributes.class "blank"]
+            [Html.text txt] in
     Html.div [Html.Attributes.class "card", Html.Attributes.class "black"] <|
-    intersperseWith (List.map (\c -> blank (Just c)) whites) (blank Nothing) <|
-    List.map Html.text <| blackCardContent cards black
+    intersperseWith (List.map blank whiteParts) (blank "") <|
+    List.map Html.text blackParts
 
 whiteCardContent : Cards -> WhiteCard -> String
 whiteCardContent cards (Messages.WhiteCard idx) =
