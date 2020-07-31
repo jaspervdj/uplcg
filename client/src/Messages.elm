@@ -77,16 +77,16 @@ jsonEncOpponent  val =
 
 
 type TableView  =
-    Proposing BlackCard (Maybe WhiteCard)
+    Proposing BlackCard (List WhiteCard)
 
 jsonDecTableView : Json.Decode.Decoder ( TableView )
 jsonDecTableView =
-    Json.Decode.lazy (\_ -> Json.Decode.map2 Proposing (Json.Decode.index 0 (jsonDecBlackCard)) (Json.Decode.index 1 (Json.Decode.maybe (jsonDecWhiteCard))))
+    Json.Decode.lazy (\_ -> Json.Decode.map2 Proposing (Json.Decode.index 0 (jsonDecBlackCard)) (Json.Decode.index 1 (Json.Decode.list (jsonDecWhiteCard))))
 
 
 jsonEncTableView : TableView -> Value
 jsonEncTableView (Proposing v1 v2) =
-    Json.Encode.list identity [jsonEncBlackCard v1, (maybeEncode (jsonEncWhiteCard)) v2]
+    Json.Encode.list identity [jsonEncBlackCard v1, (Json.Encode.list jsonEncWhiteCard) v2]
 
 
 
@@ -145,13 +145,13 @@ jsonEncServerMessage  val =
 
 type ClientMessage  =
     ChangeMyName String
-    | ProposeWhiteCards WhiteCard
+    | ProposeWhiteCards (List WhiteCard)
 
 jsonDecClientMessage : Json.Decode.Decoder ( ClientMessage )
 jsonDecClientMessage =
     let jsonDecDictClientMessage = Dict.fromList
             [ ("ChangeMyName", Json.Decode.lazy (\_ -> Json.Decode.map ChangeMyName (Json.Decode.string)))
-            , ("ProposeWhiteCards", Json.Decode.lazy (\_ -> Json.Decode.map ProposeWhiteCards (jsonDecWhiteCard)))
+            , ("ProposeWhiteCards", Json.Decode.lazy (\_ -> Json.Decode.map ProposeWhiteCards (Json.Decode.list (jsonDecWhiteCard))))
             ]
     in  decodeSumObjectWithSingleField  "ClientMessage" jsonDecDictClientMessage
 
@@ -159,7 +159,7 @@ jsonEncClientMessage : ClientMessage -> Value
 jsonEncClientMessage  val =
     let keyval v = case v of
                     ChangeMyName v1 -> ("ChangeMyName", encodeValue (Json.Encode.string v1))
-                    ProposeWhiteCards v1 -> ("ProposeWhiteCards", encodeValue (jsonEncWhiteCard v1))
+                    ProposeWhiteCards v1 -> ("ProposeWhiteCards", encodeValue ((Json.Encode.list jsonEncWhiteCard) v1))
     in encodeSumObjectWithSingleField keyval val
 
 

@@ -29,7 +29,7 @@ data Opponent = Opponent
     } deriving (Show)
 
 data TableView
-    = Proposing BlackCard (Maybe WhiteCard)
+    = Proposing BlackCard [WhiteCard]
     deriving (Show)
 
 data GameView = GameView
@@ -48,7 +48,7 @@ data ServerMessage
 
 data ClientMessage
     = ChangeMyName Text
-    | ProposeWhiteCards WhiteCard  -- TODO: Needs to be a list?
+    | ProposeWhiteCards [WhiteCard]
     deriving (Show)
 
 deriveBoth defaultOptions ''BlackCard

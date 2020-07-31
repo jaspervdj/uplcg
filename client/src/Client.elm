@@ -30,7 +30,7 @@ type alias GameState =
     { cards : Cards
     , view : GameView
     , changeMyName : String
-    , selectedWhiteCard : Maybe WhiteCard
+    , selectedWhiteCards : List WhiteCard
     }
 
 type Model
@@ -89,26 +89,27 @@ view model = case model of
             (\c -> whiteCard game.cards c (cardIsSelected game c))
             game.view.hand)
 
-selectedWhiteCard : GameState -> Maybe WhiteCard
-selectedWhiteCard game = case game.view.table of
-    Messages.Proposing _ (Just my) -> Just my
-    _ -> game.selectedWhiteCard
+tableBlackCard : GameState -> Maybe BlackCard
+tableBlackCard game = case game.view.table of
+    Messages.Proposing b _ -> Just b
+
+selectedWhiteCards : GameState -> List WhiteCard
+selectedWhiteCards game = case game.view.table of
+    Messages.Proposing _ (x :: xs) -> x :: xs
+    _ -> game.selectedWhiteCards
 
 cardIsSelected : GameState -> WhiteCard -> Bool
-cardIsSelected game card = selectedWhiteCard game == Just card
+cardIsSelected game card = List.member card <| selectedWhiteCards game
 
 viewTable : GameState -> Html Msg
 viewTable game = case game.view.table of
     Messages.Proposing c my -> Html.div [] <|
-        [ blackCard game.cards c <| case selectedWhiteCard game of
-            Nothing -> []
-            Just wc -> [wc]
+        [ blackCard game.cards c <| selectedWhiteCards game
         , Html.button
-            [ Html.Attributes.disabled <| case my of
-                Just _ -> True
-                _ -> case selectedWhiteCard game of
-                    Nothing -> True
-                    Just _ -> False
+            [ Html.Attributes.disabled <|
+                List.length my > 0 ||
+                List.length (selectedWhiteCards game) /=
+                    blackCardBlanks game.cards c
             , Html.Events.onClick ProposeWhiteCards
             ]
             [Html.text "Propose"]
@@ -122,8 +123,15 @@ intersperseWith values def list = case list of
         [] -> x :: def :: intersperseWith values def (y :: t)
         v :: vs -> x :: v :: intersperseWith vs def (y :: t)
 
+blackCardContent : Cards -> BlackCard -> List String
+blackCardContent cards (Messages.BlackCard idx) =
+    String.split "\\BLANK" <| Maybe.withDefault "" <| Array.get idx cards.black
+
+blackCardBlanks : Cards -> BlackCard -> Int
+blackCardBlanks cards c = List.length (blackCardContent cards c) - 1
+
 blackCard : Cards -> BlackCard -> List WhiteCard -> Html a
-blackCard cards (Messages.BlackCard idx) whites =
+blackCard cards black whites =
     let blank mbWhite = Html.span
             [Html.Attributes.class "blank"] <|
             case mbWhite of
@@ -131,9 +139,7 @@ blackCard cards (Messages.BlackCard idx) whites =
                 Just w -> [Html.text <| whiteCardContent cards w] in
     Html.div [Html.Attributes.class "card", Html.Attributes.class "black"] <|
     intersperseWith (List.map (\c -> blank (Just c)) whites) (blank Nothing) <|
-    List.map Html.text <|
-    String.split "\\BLANK" <| Maybe.withDefault "" <|
-    Array.get idx cards.black
+    List.map Html.text <| blackCardContent cards black
 
 whiteCardContent : Cards -> WhiteCard -> String
 whiteCardContent cards (Messages.WhiteCard idx) =
@@ -173,7 +179,7 @@ update msg model = case msg of
                             { cards = {black = Array.empty, white = Array.empty}
                             , view = gameView
                             , changeMyName = gameView.myName
-                            , selectedWhiteCard = Nothing
+                            , selectedWhiteCards = []
                             }
                         , Cmd.none
                         )
@@ -194,15 +200,22 @@ update msg model = case msg of
         _ -> (model, Cmd.none)
 
     SelectWhiteCard card -> case model of
-        Game game -> (Game {game | selectedWhiteCard = Just card}, Cmd.none)
+        Game game ->
+            let cards = case List.member card game.selectedWhiteCards of
+                    True  -> List.filter (\c -> c /= card) game.selectedWhiteCards
+                    False -> List.take
+                        (case tableBlackCard game of
+                            Nothing -> 0
+                            Just c  -> blackCardBlanks game.cards c - 1)
+                        game.selectedWhiteCards ++
+                        [card] in
+            (Game {game | selectedWhiteCards = cards}, Cmd.none)
         _ -> (model, Cmd.none)
 
     ProposeWhiteCards -> case model of
         Game game ->
-            ( Game {game | selectedWhiteCard = Nothing}
-            , case game.selectedWhiteCard of
-                Nothing -> Cmd.none
-                Just c -> send <| Messages.ProposeWhiteCards c
+            ( Game {game | selectedWhiteCards = []}
+            , send <| Messages.ProposeWhiteCards game.selectedWhiteCards
             )
         _ -> (model, Cmd.none)
 

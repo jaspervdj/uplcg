@@ -113,9 +113,10 @@ syncRoom room = do
     (game, sinks) <- atomically $ (,)
         <$> STM.readTVar (roomGame room)
         <*> STM.readTVar (roomSinks room)
-    warning $ "New state: " ++ show game
-    for_ (HMS.toList sinks) $ \(pid, sink) ->
-        sink . Aeson.encode . SyncGameView $ gameViewForPlayer pid game
+    for_ (HMS.toList sinks) $ \(pid, sink) -> do
+        let view = gameViewForPlayer pid game
+        warning $ "New state: " ++ show view
+        sink . Aeson.encode $ SyncGameView view
 
 wsApp :: Server -> WS.ServerApp
 wsApp server pc = case routePendingConnection pc of
