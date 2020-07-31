@@ -57,14 +57,14 @@ makeLenses ''Game
 
 newGame :: Cards -> IO Game
 newGame cards = do
-    black <- newDeck BlackCard $ cardsBlack cards
+    black <- fmap InfiniteDeck.pop . newDeck BlackCard $ cardsBlack cards
     white <- newDeck WhiteCard $ cardsWhite cards
     pure Game
         { _gameCards        = cards
-        , _gameBlack        = black
+        , _gameBlack        = snd black
         , _gameWhite        = white
         , _gamePlayers      = HMS.empty
-        , _gameTable        = TableProposing (BlackCard 0) HMS.empty
+        , _gameTable        = TableProposing (fst black) HMS.empty
         , _gameNextPlayerId = 1
         }
   where

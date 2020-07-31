@@ -83,8 +83,10 @@ view model = case model of
                 ]
                 [Html.text "Update name"]
             ]
+        , Html.h1 [] [Html.text "Table"]
+        , viewTable game
+        , Html.h1 [] [Html.text "Your cards"]
         ] ++
-        [viewTable game] ++
         (List.map
             (\c -> whiteCard game.cards c (cardIsSelected game c))
             game.view.hand)
