@@ -22,6 +22,7 @@ import qualified Data.Text.Encoding             as T
 import qualified Data.Text.IO                   as T
 import qualified Data.Text.Lazy                 as TL
 import qualified Data.Vector                    as V
+import qualified Data.Vector                    as V
 import qualified Network.Wai                    as Wai
 import qualified Network.Wai.Handler.Warp       as Warp
 import qualified Network.Wai.Handler.WebSockets as WaiWs
@@ -51,7 +52,7 @@ readCards = Cards
     <$> fmap parseCards (T.readFile "assets/black.txt")
     <*> fmap parseCards (T.readFile "assets/white.txt")
   where
-    parseCards =
+    parseCards = V.fromList .
         filter (not . T.isPrefixOf "#") . filter (not . T.null) . T.lines
 
 newServer :: IO Server

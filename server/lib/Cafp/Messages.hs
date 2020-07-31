@@ -9,7 +9,8 @@ module Cafp.Messages
     , ClientMessage (..)
     ) where
 
-import           Data.Text  (Text)
+import           Data.Text   (Text)
+import           Data.Vector (Vector)
 import           Elm.Derive
 
 data BlackCard = BlackCard Int deriving (Show)
@@ -17,8 +18,8 @@ data BlackCard = BlackCard Int deriving (Show)
 data WhiteCard = WhiteCard Int deriving (Show)
 
 data Cards = Cards
-    { cardsBlack :: [Text]
-    , cardsWhite :: [Text]
+    { cardsBlack        :: Vector Text
+    , cardsWhite        :: Vector Text
     } deriving (Show)
 
 data TableView
@@ -41,6 +42,7 @@ data ServerMessage
 
 data ClientMessage
     = ChangeMyName Text
+    | ProposeWhiteCards WhiteCard  -- TODO: Needs to be a list?
     deriving (Show)
 
 deriveBoth defaultOptions ''BlackCard

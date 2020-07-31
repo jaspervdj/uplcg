@@ -18,12 +18,13 @@ module Cafp.Game
 
 import           Cafp.Messages
 import           Control.Lens        (at, ix, over, to, (%~), (&), (.~), (^.),
-                                      (^?))
-import           Control.Lens.TH     (makeLenses)
+                                      (^?), _2)
+import           Control.Lens.TH     (makeLenses, makePrisms)
 import qualified Data.HashMap.Strict as HMS
 import           Data.Maybe          (fromMaybe)
 import           Data.Text           (Text)
 import qualified Data.Text           as T
+import qualified Data.Vector         as V
 
 type PlayerId = Int
 
@@ -38,6 +39,7 @@ data Game = Game
     , _gameNextPlayerId :: !Int
     } deriving (Show)
 
+makePrisms ''Table
 makeLenses ''Game
 
 newGame :: Cards -> Game
@@ -59,10 +61,22 @@ joinGame game =
 leaveGame :: PlayerId -> Game -> Game
 leaveGame pid = over gamePlayers $ HMS.delete pid
 
+validWhiteCard :: Cards -> WhiteCard -> Bool
+validWhiteCard cards (WhiteCard c) =
+    let len = V.length $ cardsWhite cards in c >= 0 && c < len
+
 processClientMessage :: PlayerId -> ClientMessage -> Game -> Game
 processClientMessage pid msg game = case msg of
     ChangeMyName name ->
         game & gamePlayers . ix pid .~ name
+    ProposeWhiteCards c
+        -- Bad card proposed.
+        | not $ validWhiteCard (game ^. gameCards) c -> game
+        -- Proposal already made.
+        | Just _ <- game ^? gameTable . _TableProposing . _2 . at pid -> game
+        -- TODO: Check that the card is in the hand of the player.
+        | otherwise                                  ->
+            game & gameTable . _TableProposing . _2 . at pid .~ Just c
 
 gameViewForPlayer :: PlayerId -> Game -> GameView
 gameViewForPlayer self game =

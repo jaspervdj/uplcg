@@ -22,6 +22,7 @@ type Msg
     | SubmitMyName
     -- Card selection
     | SelectWhiteCard WhiteCard
+    | ProposeWhiteCards
 
 type alias Cards = {black : Array String, white : Array String}
 
@@ -74,7 +75,7 @@ view model = case model of
                 , Html.Attributes.disabled <|
                     game.view.myName == game.changeMyName
                 ]
-                [Html.text "change"]
+                [Html.text "Update name"]
             ]
         ] ++
         [viewTable game] ++
@@ -96,6 +97,15 @@ viewTable game = case game.view.table of
         [ blackCard game.cards c <| case selectedWhiteCard game of
             Nothing -> []
             Just wc -> [wc]
+        , Html.button
+            [ Html.Attributes.disabled <| case my of
+                Just _ -> True
+                _ -> case selectedWhiteCard game of
+                    Nothing -> True
+                    Just _ -> False
+            , Html.Events.onClick ProposeWhiteCards
+            ]
+            [Html.text "Propose"]
         ]
 
 intersperseWith : List a -> a -> List a -> List a
@@ -174,11 +184,20 @@ update msg model = case msg of
         Game game -> (Game {game | changeMyName = name}, Cmd.none)
         _ -> (model, Cmd.none)
     SubmitMyName -> case model of
-        Game game -> (model , send <| Messages.ChangeMyName game.changeMyName)
+        Game game -> (model, send <| Messages.ChangeMyName game.changeMyName)
         _ -> (model, Cmd.none)
 
     SelectWhiteCard card -> case model of
         Game game -> (Game {game | selectedWhiteCard = Just card}, Cmd.none)
+        _ -> (model, Cmd.none)
+
+    ProposeWhiteCards -> case model of
+        Game game ->
+            ( Game {game | selectedWhiteCard = Nothing}
+            , case game.selectedWhiteCard of
+                Nothing -> Cmd.none
+                Just c -> send <| Messages.ProposeWhiteCards c
+            )
         _ -> (model, Cmd.none)
 
 main : Program () Model Msg

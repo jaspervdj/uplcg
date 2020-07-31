@@ -125,14 +125,21 @@ jsonEncServerMessage  val =
 
 type ClientMessage  =
     ChangeMyName String
+    | ProposeWhiteCards WhiteCard
 
 jsonDecClientMessage : Json.Decode.Decoder ( ClientMessage )
 jsonDecClientMessage =
-    Json.Decode.lazy (\_ -> Json.Decode.map ChangeMyName (Json.Decode.string))
-
+    let jsonDecDictClientMessage = Dict.fromList
+            [ ("ChangeMyName", Json.Decode.lazy (\_ -> Json.Decode.map ChangeMyName (Json.Decode.string)))
+            , ("ProposeWhiteCards", Json.Decode.lazy (\_ -> Json.Decode.map ProposeWhiteCards (jsonDecWhiteCard)))
+            ]
+    in  decodeSumObjectWithSingleField  "ClientMessage" jsonDecDictClientMessage
 
 jsonEncClientMessage : ClientMessage -> Value
-jsonEncClientMessage (ChangeMyName v1) =
-    Json.Encode.string v1
+jsonEncClientMessage  val =
+    let keyval v = case v of
+                    ChangeMyName v1 -> ("ChangeMyName", encodeValue (Json.Encode.string v1))
+                    ProposeWhiteCards v1 -> ("ProposeWhiteCards", encodeValue (jsonEncWhiteCard v1))
+    in encodeSumObjectWithSingleField keyval val
 
 
