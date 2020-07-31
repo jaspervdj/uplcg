@@ -7,7 +7,7 @@ import Html.Events
 import Html exposing (Html)
 import Json.Decode
 import Json.Encode
-import Messages exposing (GameView)
+import Messages exposing (BlackCard, WhiteCard, GameView)
 import Url exposing (Url)
 
 port webSocketIn : (String -> msg) -> Sub msg
@@ -20,19 +20,24 @@ type Msg
     -- Name changes
     | ChangeMyName String
     | SubmitMyName
+    -- Card selection
+    | SelectWhiteCard WhiteCard
 
 type alias Cards = {black : Array String, white : Array String}
+
+type alias GameState =
+    { cards : Cards
+    , view : GameView
+    , changeMyName : String
+    , selectedWhiteCard : Maybe WhiteCard
+    }
 
 type Model
     = Error String
     | Connecting
         { roomId : String
         }
-    | Game
-        { cards : Cards
-        , view : GameView
-        , changeMyName : String
-        }
+    | Game GameState
 
 parseRoomId : Url -> Result String String
 parseRoomId url = case String.split "/" url.path of
@@ -72,29 +77,61 @@ view model = case model of
                 [Html.text "change"]
             ]
         ] ++
-        [viewTable game.cards game.view.table] ++
-        (List.map (whiteCard game.cards) game.view.hand)
+        [viewTable game] ++
+        (List.map
+            (\c -> whiteCard game.cards c (cardIsSelected game c))
+            game.view.hand)
 
-viewTable : Cards -> Messages.TableView -> Html a
-viewTable cards (Messages.Proposing c my) = Html.div [] <|
-    [ blackCard cards c
-    ] ++
-    (case my of
-        Nothing -> []
-        Just mc -> [whiteCard cards mc])
+selectedWhiteCard : GameState -> Maybe WhiteCard
+selectedWhiteCard game = case game.view.table of
+    Messages.Proposing _ (Just my) -> Just my
+    _ -> game.selectedWhiteCard
 
-blackCard : Cards -> Messages.BlackCard -> Html a
-blackCard cards (Messages.BlackCard idx) =
-    let blank = Html.span [Html.Attributes.class "blank"] [] in
+cardIsSelected : GameState -> WhiteCard -> Bool
+cardIsSelected game card = selectedWhiteCard game == Just card
+
+viewTable : GameState -> Html Msg
+viewTable game = case game.view.table of
+    Messages.Proposing c my -> Html.div [] <|
+        [ blackCard game.cards c <| case selectedWhiteCard game of
+            Nothing -> []
+            Just wc -> [wc]
+        ]
+
+intersperseWith : List a -> a -> List a -> List a
+intersperseWith values def list = case list of
+    [] -> []
+    x :: [] -> x :: []
+    x :: y :: t -> case values of
+        [] -> x :: def :: intersperseWith values def (y :: t)
+        v :: vs -> x :: v :: intersperseWith vs def (y :: t)
+
+blackCard : Cards -> BlackCard -> List WhiteCard -> Html a
+blackCard cards (Messages.BlackCard idx) whites =
+    let blank mbWhite = Html.span
+            [Html.Attributes.class "blank"] <|
+            case mbWhite of
+                Nothing -> []
+                Just w -> [Html.text <| whiteCardContent cards w] in
     Html.div [Html.Attributes.class "card", Html.Attributes.class "black"] <|
-    List.intersperse blank <| List.map Html.text <|
+    intersperseWith (List.map (\c -> blank (Just c)) whites) (blank Nothing) <|
+    List.map Html.text <|
     String.split "\\BLANK" <| Maybe.withDefault "" <|
     Array.get idx cards.black
 
-whiteCard : Cards -> Messages.WhiteCard -> Html a
-whiteCard cards (Messages.WhiteCard idx) = Html.div
-    [Html.Attributes.class "card", Html.Attributes.class "white"]
-    [Html.text <| Maybe.withDefault "" <| Array.get idx cards.white]
+whiteCardContent : Cards -> WhiteCard -> String
+whiteCardContent cards (Messages.WhiteCard idx) =
+    Maybe.withDefault "" <| Array.get idx cards.white
+
+whiteCard : Cards -> WhiteCard -> Bool -> Html Msg
+whiteCard cards c selected = Html.div
+    [ Html.Attributes.class "card"
+    , Html.Attributes.class "white"
+    , Html.Attributes.class <| if selected then "selected" else ""
+    , Html.Events.onClick <| SelectWhiteCard c
+    ]
+    [ Html.text <| whiteCardContent cards c
+    ]
 
 subscriptions : Model -> Sub Msg
 subscriptions model = webSocketIn WebSocketIn
@@ -120,6 +157,7 @@ update msg model = case msg of
                             { cards = {black = Array.empty, white = Array.empty}
                             , view = gameView
                             , changeMyName = gameView.myName
+                            , selectedWhiteCard = Nothing
                             }
                         , Cmd.none
                         )
@@ -137,6 +175,10 @@ update msg model = case msg of
         _ -> (model, Cmd.none)
     SubmitMyName -> case model of
         Game game -> (model , send <| Messages.ChangeMyName game.changeMyName)
+        _ -> (model, Cmd.none)
+
+    SelectWhiteCard card -> case model of
+        Game game -> (Game {game | selectedWhiteCard = Just card}, Cmd.none)
         _ -> (model, Cmd.none)
 
 main : Program () Model Msg

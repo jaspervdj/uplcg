@@ -16,10 +16,15 @@ html {
   color: black;
   background: white;
   border: 2px solid black;
+  cursor: pointer;
+}
+
+.selected {
+  background: #d2f4c6;
 }
 
 .blank {
   border-bottom: 2px solid white;
   display: inline-block;
-  width: 42px;
+  min-width: 42px;
 }
