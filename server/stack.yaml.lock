@@ -3,7 +3,14 @@
 # For more information, please see the documentation at:
 #   https://docs.haskellstack.org/en/stable/lock_files
 
-packages: []
+packages:
+- completed:
+    hackage: vector-shuffling-1.1@sha256:c296c3a8571d8cee52a04de577284c639496e45b695d323804148840a0bee00c,1479
+    pantry-tree:
+      size: 384
+      sha256: b6e528bcc95d161dd1b1ee60e181cfd9320edf434efa9e823b40df3ad5ce1b57
+  original:
+    hackage: vector-shuffling-1.1
 snapshots:
 - completed:
     size: 491387

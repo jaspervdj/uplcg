@@ -14,9 +14,9 @@ import           Data.Text   (Text)
 import           Data.Vector (Vector)
 import           Elm.Derive
 
-data BlackCard = BlackCard Int deriving (Show)
+data BlackCard = BlackCard Int deriving (Eq, Show)
 
-data WhiteCard = WhiteCard Int deriving (Show)
+data WhiteCard = WhiteCard Int deriving (Eq, Show)
 
 data Cards = Cards
     { cardsBlack        :: Vector Text

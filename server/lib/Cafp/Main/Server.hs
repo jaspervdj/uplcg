@@ -6,6 +6,8 @@ module Cafp.Main.Server
 import           Cafp.Game
 import           Cafp.Messages
 import           Control.Concurrent             (threadDelay)
+import           Control.Concurrent.MVar        (MVar)
+import qualified Control.Concurrent.MVar        as MVar
 import           Control.Concurrent.STM         (STM, TVar, atomically)
 import qualified Control.Concurrent.STM         as STM
 import           Control.Exception              (bracket)
@@ -44,7 +46,7 @@ data Room = Room
 
 data Server = Server
     { serverCards :: Cards
-    , serverRooms :: TVar (HMS.HashMap RoomId Room)
+    , serverRooms :: MVar (HMS.HashMap RoomId Room)
     }
 
 readCards :: IO Cards
@@ -56,12 +58,12 @@ readCards = Cards
         filter (not . T.isPrefixOf "#") . filter (not . T.null) . T.lines
 
 newServer :: IO Server
-newServer = Server <$> readCards <*> atomically (STM.newTVar HMS.empty)
+newServer = Server <$> readCards <*> MVar.newMVar HMS.empty
 
-newRoom :: Server -> STM Room
+newRoom :: Server -> IO Room
 newRoom server = Room
-    <$> STM.newTVar (newGame $ serverCards server)
-    <*> STM.newTVar HMS.empty
+    <$> (STM.newTVarIO =<< newGame (serverCards server))
+    <*> STM.newTVarIO HMS.empty
 
 scottyApp :: IO Wai.Application
 scottyApp = Scotty.scottyApp $ do
@@ -87,15 +89,13 @@ routePendingConnection pending =
         [_, "rooms", roomId, "events"] -> Just roomId
         _                              -> Nothing
 
-getOrCreateRoom :: Server -> RoomId -> STM Room
-getOrCreateRoom server roomId = do
-    rooms <- STM.readTVar $ serverRooms server
+getOrCreateRoom :: Server -> RoomId -> IO Room
+getOrCreateRoom server roomId = MVar.modifyMVar (serverRooms server) $ \rooms ->
     case HMS.lookup roomId rooms of
-        Just room -> pure room
+        Just room -> pure (rooms, room)
         Nothing   -> do
             room <- newRoom server
-            STM.writeTVar (serverRooms server) $ HMS.insert roomId room rooms
-            pure room
+            pure (HMS.insert roomId room rooms, room)
 
 joinRoom :: Room -> Sink -> STM PlayerId
 joinRoom room sink = do
@@ -122,7 +122,7 @@ wsApp :: Server -> WS.ServerApp
 wsApp server pc = case routePendingConnection pc of
     Nothing -> WS.rejectRequest pc "Invalid URL"
     Just roomId -> do
-        room <- atomically $ getOrCreateRoom server roomId
+        room <- getOrCreateRoom server roomId
         conn <- WS.acceptRequest pc
         let sink = WS.sendTextData conn
         WS.withPingThread conn 30 (pure ()) $ bracket
@@ -142,11 +142,9 @@ wsApp server pc = case routePendingConnection pc of
         case Aeson.decode msg of
             Just cm -> do
                 warning $ "Client: " ++ show cm
-                room <- atomically $ do
-                    room <- getOrCreateRoom server roomId
-                    STM.modifyTVar' (roomGame room) $
-                        processClientMessage playerId cm
-                    pure room
+                room <- getOrCreateRoom server roomId  -- TODO: only get?
+                atomically . STM.modifyTVar' (roomGame room) $
+                    processClientMessage playerId cm
                 syncRoom room
             Nothing -> do
                 warning $ "Could not decode client message: " ++ show msg
