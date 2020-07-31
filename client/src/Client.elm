@@ -45,6 +45,12 @@ parseRoomId url = case String.split "/" url.path of
     _ :: "rooms" :: roomId :: _ -> Ok roomId
     _ -> Err <| "Invalid path: " ++ url.path
 
+viewOpponent : Messages.Opponent -> Html msg
+viewOpponent opponent = Html.div [] <|
+    [ Html.text opponent.name
+    ] ++
+    if opponent.ready then [Html.text " ✅"] else []
+
 view : Model -> List (Html Msg)
 view model = case model of
     Error str ->
@@ -58,7 +64,7 @@ view model = case model of
     Game game ->
         [ Html.h1 [] [Html.text "Opponents"]
         , Html.ul [] <| List.map
-            (\p -> Html.li [] [Html.text p])
+            (\o -> Html.li [] [viewOpponent o])
             game.view.opponents
         , Html.h1 [] [Html.text "You"]
         , Html.form

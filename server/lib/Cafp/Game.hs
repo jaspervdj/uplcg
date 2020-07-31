@@ -20,6 +20,7 @@ import           Cafp.Messages
 import           Control.Lens        (at, ix, over, to, (%~), (&), (.~), (^.),
                                       (^?), _2)
 import           Control.Lens.TH     (makeLenses, makePrisms)
+import           Control.Monad       (guard)
 import qualified Data.HashMap.Strict as HMS
 import           Data.Maybe          (fromMaybe)
 import           Data.Text           (Text)
@@ -73,14 +74,19 @@ processClientMessage pid msg game = case msg of
         -- Bad card proposed.
         | not $ validWhiteCard (game ^. gameCards) c -> game
         -- Proposal already made.
-        | Just _ <- game ^? gameTable . _TableProposing . _2 . at pid -> game
+        | Just _ <- game ^? gameTable . _TableProposing . _2 . ix pid -> game
         -- TODO: Check that the card is in the hand of the player.
         | otherwise                                  ->
             game & gameTable . _TableProposing . _2 . at pid .~ Just c
 
 gameViewForPlayer :: PlayerId -> Game -> GameView
 gameViewForPlayer self game =
-    let opponents = map snd . HMS.toList . HMS.delete self $ game ^. gamePlayers
+    let opponents = do
+            (pid, oname) <- HMS.toList $ game ^. gamePlayers
+            guard $ pid /= self
+            pure $ Opponent oname $ case game ^. gameTable of
+                TableProposing _ proposals -> HMS.member pid proposals
+
         name = fromMaybe "" $ game ^. gamePlayers . at self
 
         table = case game ^. gameTable of
