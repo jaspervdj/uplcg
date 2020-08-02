@@ -106,9 +106,9 @@ newGame cards gen = flip execState state0 $ do
 joinGame :: Game -> (PlayerId, Game)
 joinGame = runState $ do
     pid <- gameNextPlayerId %%= (\x -> (x, x + 1))
-    hasAdmin <- use (gamePlayers . traverse . playerAdmin . Any)
+    haveAdmin <- use (gamePlayers . traverse . playerAdmin . to Any)
     let name = "Player " <> T.pack (show pid)
-        admin = not (getAny hasAdmin)
+        admin = not (getAny haveAdmin)
     hand <- V.replicateM 6 popWhiteCard
     gamePlayers %= HMS.insert pid (Player name hand admin)
     pure pid
@@ -170,9 +170,10 @@ gameViewForPlayer self game =
     let opponents = do
             (pid, p) <- HMS.toList $ game ^. gamePlayers
             guard $ pid /= self
-            pure $ Opponent (p ^. playerName) $ case game ^. gameTable of
-                TableProposing _ proposals -> HMS.member pid proposals
-                TableVoting _ _ votes -> HMS.member pid votes
+            let ready = case game ^. gameTable of
+                    TableProposing _ proposals -> HMS.member pid proposals
+                    TableVoting _ _ votes -> HMS.member pid votes
+            pure $ Opponent (p ^. playerName) (p ^. playerAdmin) ready
 
         player = game ^. gamePlayers . at self
 

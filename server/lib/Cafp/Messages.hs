@@ -32,6 +32,7 @@ data Cards = Cards
 
 data Opponent = Opponent
     { opponentName  :: Text
+    , opponentAdmin :: Bool
     , opponentReady :: Bool
     } deriving (Show)
 

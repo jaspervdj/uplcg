@@ -53,7 +53,8 @@ viewOpponent : Messages.Opponent -> Html msg
 viewOpponent opponent = Html.div [] <|
     [ Html.text opponent.name
     ] ++
-    if opponent.ready then [Html.text " ✅"] else []
+    (if opponent.admin then [Html.text " 👑"] else []) ++
+    (if opponent.ready then [Html.text " ✅"] else [])
 
 view : Model -> List (Html Msg)
 view model = case model of

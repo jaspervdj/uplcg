@@ -58,19 +58,22 @@ jsonEncCards  val =
 
 type alias Opponent  =
    { name: String
+   , admin: Bool
    , ready: Bool
    }
 
 jsonDecOpponent : Json.Decode.Decoder ( Opponent )
 jsonDecOpponent =
-   Json.Decode.succeed (\pname pready -> {name = pname, ready = pready})
+   Json.Decode.succeed (\pname padmin pready -> {name = pname, admin = padmin, ready = pready})
    |> required "name" (Json.Decode.string)
+   |> required "admin" (Json.Decode.bool)
    |> required "ready" (Json.Decode.bool)
 
 jsonEncOpponent : Opponent -> Value
 jsonEncOpponent  val =
    Json.Encode.object
    [ ("name", Json.Encode.string val.name)
+   , ("admin", Json.Encode.bool val.admin)
    , ("ready", Json.Encode.bool val.ready)
    ]
 
