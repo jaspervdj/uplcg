@@ -5,7 +5,6 @@ module Cafp.Main.Server
 
 import           Cafp.Game
 import           Cafp.Messages
-import           Control.Concurrent             (threadDelay)
 import           Control.Concurrent.MVar        (MVar)
 import qualified Control.Concurrent.MVar        as MVar
 import           Control.Concurrent.STM         (STM, TVar, atomically)
@@ -14,22 +13,19 @@ import           Control.Exception              (bracket)
 import           Control.Lens                   ((^.))
 import           Control.Monad                  (forever, when)
 import qualified Data.Aeson                     as Aeson
-import qualified Data.ByteString                as B
 import qualified Data.ByteString.Lazy           as BL
 import           Data.Foldable                  (for_)
 import qualified Data.HashMap.Strict            as HMS
-import           Data.Text                      (Text)
 import qualified Data.Text                      as T
 import qualified Data.Text.Encoding             as T
 import qualified Data.Text.IO                   as T
-import qualified Data.Text.Lazy                 as TL
-import qualified Data.Vector                    as V
 import qualified Data.Vector                    as V
 import qualified Network.Wai                    as Wai
 import qualified Network.Wai.Handler.Warp       as Warp
 import qualified Network.Wai.Handler.WebSockets as WaiWs
 import qualified Network.WebSockets             as WS
 import qualified System.IO                      as IO
+import           System.Random                  (StdGen, newStdGen)
 import qualified Web.Scotty                     as Scotty
 
 warning :: String -> IO ()
@@ -40,8 +36,8 @@ type RoomId = T.Text
 type Sink = BL.ByteString -> IO ()
 
 data Room = Room
-    { roomGame    :: TVar Game
-    , roomSinks   :: TVar (HMS.HashMap PlayerId Sink)
+    { roomGame  :: TVar Game
+    , roomSinks :: TVar (HMS.HashMap PlayerId Sink)
     }
 
 data Server = Server
@@ -60,10 +56,10 @@ readCards = Cards
 newServer :: IO Server
 newServer = Server <$> readCards <*> MVar.newMVar HMS.empty
 
-newRoom :: Server -> IO Room
-newRoom server = Room
-    <$> (STM.newTVarIO =<< newGame (serverCards server))
-    <*> STM.newTVarIO HMS.empty
+newRoom :: Server -> StdGen -> STM Room
+newRoom server gen = Room
+    <$> (STM.newTVar $ newGame (serverCards server) gen)
+    <*> STM.newTVar HMS.empty
 
 scottyApp :: IO Wai.Application
 scottyApp = Scotty.scottyApp $ do
@@ -94,7 +90,8 @@ getOrCreateRoom server roomId = MVar.modifyMVar (serverRooms server) $ \rooms ->
     case HMS.lookup roomId rooms of
         Just room -> pure (rooms, room)
         Nothing   -> do
-            room <- newRoom server
+            gen <- newStdGen
+            room <- atomically $ newRoom server gen
             pure (HMS.insert roomId room rooms, room)
 
 joinRoom :: Room -> Sink -> STM PlayerId

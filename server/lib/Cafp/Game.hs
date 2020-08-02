@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE Rank2Types        #-}
 {-# LANGUAGE RecordWildCards   #-}
 {-# LANGUAGE TemplateHaskell   #-}
-{-# LANGUAGE Rank2Types #-}
 module Cafp.Game
     ( PlayerId
     , Table (..)
@@ -19,17 +19,20 @@ module Cafp.Game
     ) where
 
 import           Cafp.Messages
-import           Control.Lens              (at, ix, over, to, (%~), (&), (.~),
-                                            (^.), (^..), (^?), _1, _2, traverseOf, Lens')
+import           Control.Lens              (Lens', at, ix, over, to, traverseOf,
+                                            (%%=), (%=), (%~), (&), (.~), (^.),
+                                            (^..), (^?), _1, _2, (.=))
 import           Control.Lens.TH           (makeLenses, makePrisms)
-import           Control.Monad             (guard, (>=>))
+import           Control.Monad             (guard, replicateM, (>=>))
+import           Control.Monad.State       (State, state, execState, runState)
 import qualified Data.HashMap.Strict       as HMS
 import           Data.Maybe                (fromMaybe)
+import Data.Bifunctor (first)
 import           Data.Text                 (Text)
 import qualified Data.Text                 as T
-import qualified Cafp.InfiniteDeck as InfiniteDeck
-import Cafp.InfiniteDeck (InfiniteDeck)
 import qualified Data.Vector               as V
+import           System.Random             (StdGen)
+import           VectorShuffling.Immutable (shuffle)
 
 type PlayerId = Int
 
@@ -38,14 +41,15 @@ data Table
     deriving (Show)
 
 data Player = Player
-    { _playerName       :: Text
-    , _playerHand       :: [WhiteCard]
+    { _playerName :: Text
+    , _playerHand :: [WhiteCard]
     } deriving (Show)
 
 data Game = Game
     { _gameCards        :: !Cards
-    , _gameBlack        :: !(InfiniteDeck BlackCard)
-    , _gameWhite        :: !(InfiniteDeck WhiteCard)
+    , _gameSeed         :: !StdGen
+    , _gameBlack        :: ![BlackCard]
+    , _gameWhite        :: ![WhiteCard]
     , _gamePlayers      :: !(HMS.HashMap PlayerId Player)
     , _gameTable        :: !Table
     , _gameNextPlayerId :: !Int
@@ -55,32 +59,47 @@ makePrisms ''Table
 makeLenses ''Player
 makeLenses ''Game
 
-newGame :: Cards -> IO Game
-newGame cards = do
-    black <- fmap InfiniteDeck.pop . newDeck BlackCard $ cardsBlack cards
-    white <- newDeck WhiteCard $ cardsWhite cards
-    pure Game
+popCard
+    :: (Cards -> V.Vector t) -> (Int -> c) -> Lens' Game [c]
+    -> State Game c
+popCard getDeck mk queue = state $ \game -> case game ^. queue of
+    (x : xs) -> (x, game & queue .~ xs)
+    []        ->
+        let deck = game ^. gameCards . to getDeck
+            idxs = V.imap (\i _ -> mk i) deck
+            (cs, seed) = first V.toList $ shuffle idxs (game ^. gameSeed) in
+        case cs of
+            []     -> error "popCard: Cards are empty"
+            x : xs -> (x, game & queue .~ xs & gameSeed .~ seed)
+
+popBlackCard :: State Game BlackCard
+popBlackCard = popCard cardsBlack BlackCard gameBlack
+
+popWhiteCard :: State Game WhiteCard
+popWhiteCard = popCard cardsWhite WhiteCard gameWhite
+
+newGame :: Cards -> StdGen -> Game
+newGame cards gen = flip execState state0 $ do
+    black <- popBlackCard
+    gameTable .= TableProposing black HMS.empty
+  where
+    state0 = Game
         { _gameCards        = cards
-        , _gameBlack        = snd black
-        , _gameWhite        = white
+        , _gameSeed         = gen
+        , _gameBlack        = []
+        , _gameWhite        = []
         , _gamePlayers      = HMS.empty
-        , _gameTable        = TableProposing (fst black) HMS.empty
+        , _gameTable        = TableProposing (BlackCard 0) HMS.empty
         , _gameNextPlayerId = 1
         }
-  where
-    newDeck f = InfiniteDeck.newIO . V.imap (\i _ -> f i)
 
 joinGame :: Game -> (PlayerId, Game)
-joinGame game =
-    let pid = game ^. gameNextPlayerId
-        name = "Player " <> T.pack (show pid)
-        (hand, white) = InfiniteDeck.popN 6 (game ^. gameWhite) in
-    ( pid
-    , game
-        & gameNextPlayerId %~ succ
-        & gamePlayers %~ HMS.insert pid (Player name hand)
-        & gameWhite .~ white
-    )
+joinGame = runState $ do
+    pid <- gameNextPlayerId %%= (\x -> (x, x + 1))
+    let name = "Player " <> T.pack (show pid)
+    hand <- replicateM 6 popWhiteCard
+    gamePlayers %= HMS.insert pid (Player name hand)
+    pure pid
 
 leaveGame :: PlayerId -> Game -> Game
 leaveGame pid = over gamePlayers $ HMS.delete pid

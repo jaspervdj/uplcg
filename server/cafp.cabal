@@ -17,7 +17,6 @@ Library
 
   Exposed-modules:
     Cafp.Game
-    Cafp.InfiniteDeck
     Cafp.Messages
     Cafp.Main.GenerateElmTypes
     Cafp.Main.Server
@@ -28,6 +27,7 @@ Library
     bytestring           >= 0.10 && < 0.11,
     elm-bridge           >= 0.5  && < 0.6,
     lens                 >= 4.18 && < 4.19,
+    mtl                  >= 2.2  && < 2.3,
     random               >= 1.1  && < 1.2,
     scotty               >= 0.11 && < 0.12,
     stm                  >= 2.5  && < 2.6,
