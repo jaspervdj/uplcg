@@ -12,6 +12,19 @@ html {
   background: black;
 }
 
+.votable {
+  cursor: pointer;
+}
+
+.mine {
+  background: #444444;
+  color: #dddddd;
+}
+
+.voted {
+  background: #003300;
+}
+
 .white {
   color: black;
   background: white;

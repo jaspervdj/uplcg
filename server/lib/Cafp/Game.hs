@@ -21,7 +21,7 @@ module Cafp.Game
 import           Cafp.Messages
 import           Control.Lens              (Lens', at, ix, over, to, traverseOf,
                                             (%%=), (%=), (%~), (&), (.~), (^.),
-                                            (^..), (^?), _1, _2, (.=))
+                                            (^..), (^?), _1, _2, (.=), _3)
 import           Control.Lens.TH           (makeLenses, makePrisms)
 import           Control.Monad             (guard, replicateM, (>=>))
 import           Control.Monad.State       (State, state, execState, runState)
@@ -44,7 +44,6 @@ data Table
         !(HMS.HashMap PlayerId Proposal)
     | TableVoting
         !BlackCard
-        !(HMS.HashMap PlayerId Proposal)
         !(V.Vector (Proposal, [PlayerId]))
         !(HMS.HashMap PlayerId Int)
     deriving (Show)
@@ -127,9 +126,9 @@ stepGame game = case game ^. gameTable of
                 (shuffled, seed) = shuffle
                     (V.fromList $ HMS.toList proposalsMap) (game ^. gameSeed) in
             game & gameSeed .~ seed
-                & gameTable .~ TableVoting black proposals shuffled HMS.empty
+                & gameTable .~ TableVoting black shuffled HMS.empty
         | otherwise -> game
-    TableVoting _ _ _ _ -> game
+    TableVoting _ _ _ -> game
 
 processClientMessage :: PlayerId -> ClientMessage -> Game -> Game
 processClientMessage pid msg game = case msg of
@@ -146,6 +145,19 @@ processClientMessage pid msg game = case msg of
         -- All good.
         | otherwise -> stepGame $
             game & gameTable . _TableProposing . _2 . at pid .~ Just cs
+
+    SubmitVote i -> case game ^. gameTable of
+        TableProposing _ _ -> game
+        TableVoting _ shuffled votes
+            -- Vote out of bounds.
+            | i < 0 || i >= V.length shuffled -> game
+            -- Already voted.
+            | pid `HMS.member` votes -> game
+            -- Can't vote for self.
+            | pid `elem` snd (shuffled V.! i) -> game
+            -- Ok vote.
+            | otherwise -> stepGame $ game
+                & gameTable . _TableVoting . _3 . at pid .~ Just i
   where
     hand = game ^.. gamePlayers . ix pid . playerHand . traverse
 
@@ -156,20 +168,17 @@ gameViewForPlayer self game =
             guard $ pid /= self
             pure $ Opponent (p ^. playerName) $ case game ^. gameTable of
                 TableProposing _ proposals -> HMS.member pid proposals
-                TableVoting _ _ _ votes -> HMS.member pid votes
+                TableVoting _ _ votes -> HMS.member pid votes
 
         player = game ^. gamePlayers . at self
 
         table = case game ^. gameTable of
             TableProposing black proposals ->
                 Proposing black . fromMaybe [] $ HMS.lookup self proposals
-            TableVoting black proposals shuffled votes -> Voting
+            TableVoting black shuffled votes -> Voting
                 black
-                (fromMaybe [] $ HMS.lookup self proposals)
-                [ proposal
-                | (proposal, players) <- V.toList shuffled
-                , not $ self `elem` players
-                ]
+                (fst <$> V.toList shuffled)
+                (fromMaybe 0 $ V.findIndex ((self `elem`) . snd) shuffled)
                 (HMS.lookup self votes) in
     GameView
         { gameViewOpponents = opponents

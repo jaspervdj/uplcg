@@ -78,13 +78,13 @@ jsonEncOpponent  val =
 
 type TableView  =
     Proposing BlackCard (List WhiteCard)
-    | Voting BlackCard (List WhiteCard) (List (List WhiteCard)) (Maybe Int)
+    | Voting BlackCard (List (List WhiteCard)) Int (Maybe Int)
 
 jsonDecTableView : Json.Decode.Decoder ( TableView )
 jsonDecTableView =
     let jsonDecDictTableView = Dict.fromList
             [ ("Proposing", Json.Decode.lazy (\_ -> Json.Decode.map2 Proposing (Json.Decode.index 0 (jsonDecBlackCard)) (Json.Decode.index 1 (Json.Decode.list (jsonDecWhiteCard)))))
-            , ("Voting", Json.Decode.lazy (\_ -> Json.Decode.map4 Voting (Json.Decode.index 0 (jsonDecBlackCard)) (Json.Decode.index 1 (Json.Decode.list (jsonDecWhiteCard))) (Json.Decode.index 2 (Json.Decode.list (Json.Decode.list (jsonDecWhiteCard)))) (Json.Decode.index 3 (Json.Decode.maybe (Json.Decode.int)))))
+            , ("Voting", Json.Decode.lazy (\_ -> Json.Decode.map4 Voting (Json.Decode.index 0 (jsonDecBlackCard)) (Json.Decode.index 1 (Json.Decode.list (Json.Decode.list (jsonDecWhiteCard)))) (Json.Decode.index 2 (Json.Decode.int)) (Json.Decode.index 3 (Json.Decode.maybe (Json.Decode.int)))))
             ]
     in  decodeSumObjectWithSingleField  "TableView" jsonDecDictTableView
 
@@ -92,7 +92,7 @@ jsonEncTableView : TableView -> Value
 jsonEncTableView  val =
     let keyval v = case v of
                     Proposing v1 v2 -> ("Proposing", encodeValue (Json.Encode.list identity [jsonEncBlackCard v1, (Json.Encode.list jsonEncWhiteCard) v2]))
-                    Voting v1 v2 v3 v4 -> ("Voting", encodeValue (Json.Encode.list identity [jsonEncBlackCard v1, (Json.Encode.list jsonEncWhiteCard) v2, (Json.Encode.list (Json.Encode.list jsonEncWhiteCard)) v3, (maybeEncode (Json.Encode.int)) v4]))
+                    Voting v1 v2 v3 v4 -> ("Voting", encodeValue (Json.Encode.list identity [jsonEncBlackCard v1, (Json.Encode.list (Json.Encode.list jsonEncWhiteCard)) v2, Json.Encode.int v3, (maybeEncode (Json.Encode.int)) v4]))
     in encodeSumObjectWithSingleField keyval val
 
 
@@ -153,12 +153,14 @@ jsonEncServerMessage  val =
 type ClientMessage  =
     ChangeMyName String
     | ProposeWhiteCards (List WhiteCard)
+    | SubmitVote Int
 
 jsonDecClientMessage : Json.Decode.Decoder ( ClientMessage )
 jsonDecClientMessage =
     let jsonDecDictClientMessage = Dict.fromList
             [ ("ChangeMyName", Json.Decode.lazy (\_ -> Json.Decode.map ChangeMyName (Json.Decode.string)))
             , ("ProposeWhiteCards", Json.Decode.lazy (\_ -> Json.Decode.map ProposeWhiteCards (Json.Decode.list (jsonDecWhiteCard))))
+            , ("SubmitVote", Json.Decode.lazy (\_ -> Json.Decode.map SubmitVote (Json.Decode.int)))
             ]
     in  decodeSumObjectWithSingleField  "ClientMessage" jsonDecDictClientMessage
 
@@ -167,6 +169,7 @@ jsonEncClientMessage  val =
     let keyval v = case v of
                     ChangeMyName v1 -> ("ChangeMyName", encodeValue (Json.Encode.string v1))
                     ProposeWhiteCards v1 -> ("ProposeWhiteCards", encodeValue ((Json.Encode.list jsonEncWhiteCard) v1))
+                    SubmitVote v1 -> ("SubmitVote", encodeValue (Json.Encode.int v1))
     in encodeSumObjectWithSingleField keyval val
 
 

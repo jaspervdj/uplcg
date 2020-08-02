@@ -39,8 +39,8 @@ data TableView
     = Proposing BlackCard [WhiteCard]
     | Voting
         BlackCard
-        [WhiteCard]    -- ^ My proposal
         [[WhiteCard]]  -- ^ Proposals to vote for
+        Int            -- ^ My proposal
         (Maybe Int)    -- ^ My vote
     deriving (Show)
 
@@ -61,6 +61,7 @@ data ServerMessage
 data ClientMessage
     = ChangeMyName Text
     | ProposeWhiteCards [WhiteCard]
+    | SubmitVote Int
     deriving (Show)
 
 deriveBoth defaultOptions ''BlackCard

@@ -23,6 +23,9 @@ type Msg
     -- Card selection
     | SelectWhiteCard WhiteCard
     | ProposeWhiteCards
+    -- Voting
+    | SelectVote Int
+    | SubmitVote
 
 type alias Cards = {black : Array String, white : Array String}
 
@@ -31,6 +34,7 @@ type alias GameState =
     , view : GameView
     , changeMyName : String
     , selectedWhiteCards : List WhiteCard
+    , selectedVote : Maybe Int
     }
 
 type Model
@@ -107,7 +111,7 @@ cardIsSelected game card = List.member card <| selectedWhiteCards game
 viewTable : GameState -> Html Msg
 viewTable game = case game.view.table of
     Messages.Proposing c my -> Html.div [] <|
-        [ blackCard game.cards c <| selectedWhiteCards game
+        [ blackCard [] game.cards c <| selectedWhiteCards game
         , Html.button
             [ Html.Attributes.disabled <|
                 List.length my > 0 ||
@@ -117,13 +121,31 @@ viewTable game = case game.view.table of
             ]
             [Html.text "Propose"]
         ]
-    Messages.Voting black myProposal proposals myVote -> Html.div [] <|
-        [ Html.h2 [] [Html.text "Your proposal"]
-        , blackCard game.cards black myProposal
-        ] ++
+    Messages.Voting black proposals myProposal myVote -> Html.div [] <|
         [ Html.h2 [] [Html.text "Opponent proposals"]
         ] ++
-        List.map (blackCard game.cards black) proposals
+        List.indexedMap (\i proposal ->
+            let attrs =
+                    if i == myProposal then
+                        [Html.Attributes.class "mine"]
+                    else if Just i == myVote || Just i == game.selectedVote then
+                        [Html.Attributes.class "voted"]
+                    else
+                        [ Html.Events.onClick <| SelectVote i
+                        , Html.Attributes.class "votable"
+                        ] in
+            blackCard attrs game.cards black proposal) proposals ++
+        [ Html.button
+            [ Html.Attributes.disabled <|
+                (case myVote of
+                     Just _ -> True
+                     Nothing -> case game.selectedVote of
+                         Just _ -> False
+                         Nothing -> True)
+            , Html.Events.onClick SubmitVote
+            ]
+            [Html.text "Vote"]
+        ]
 
 intersperseWith : List a -> a -> List a -> List a
 intersperseWith values def list = case list of
@@ -141,12 +163,14 @@ blackCardBlanks : Cards -> BlackCard -> Int
 blackCardBlanks cards c = List.length (blackCardContent cards c) - 1
 
 capitalizeFirst : List String -> List String
-capitalizeFirst l = case l of
-    x :: xs -> (String.toUpper (String.left 1 x) ++ String.dropLeft 1 x) :: xs
-    _ -> l
+capitalizeFirst = List.indexedMap <| \i x -> if i == 0
+    then String.toUpper (String.left 1 x) ++ String.dropLeft 1 x
+    else x
 
-blackCard : Cards -> BlackCard -> List WhiteCard -> Html a
-blackCard cards black whites =
+blackCard
+    : List (Html.Attribute a) -> Cards -> BlackCard -> List WhiteCard
+    -> Html a
+blackCard attrs cards black whites =
     let blackParts = blackCardContent cards black
         whiteParts = List.map (whiteCardContent cards) whites |>
             case blackParts of
@@ -155,7 +179,8 @@ blackCard cards black whites =
         blank txt = Html.span
             [Html.Attributes.class "blank"]
             [Html.text txt] in
-    Html.div [Html.Attributes.class "card", Html.Attributes.class "black"] <|
+    Html.div
+        (List.map Html.Attributes.class ["card", "black"] ++ attrs) <|
     intersperseWith (List.map blank whiteParts) (blank "") <|
     List.map Html.text blackParts
 
@@ -198,6 +223,7 @@ update msg model = case msg of
                             , view = gameView
                             , changeMyName = gameView.myName
                             , selectedWhiteCards = []
+                            , selectedVote = Nothing
                             }
                         , Cmd.none
                         )
@@ -235,6 +261,22 @@ update msg model = case msg of
             ( Game {game | selectedWhiteCards = []}
             , send <| Messages.ProposeWhiteCards game.selectedWhiteCards
             )
+        _ -> (model, Cmd.none)
+
+    SelectVote i -> case model of
+        Game game -> case game.view.table of
+            Messages.Voting _ _ _ Nothing ->
+                (Game {game | selectedVote = Just i}, Cmd.none)
+            _ -> (model, Cmd.none)
+        _ -> (model, Cmd.none)
+
+    SubmitVote -> case model of
+        Game game -> case game.selectedVote of
+            Just vote ->
+                ( Game {game | selectedVote = Nothing}
+                , send <| Messages.SubmitVote vote
+                )
+            _ -> (model, Cmd.none)
         _ -> (model, Cmd.none)
 
 main : Program () Model Msg
