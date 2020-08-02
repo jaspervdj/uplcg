@@ -36,13 +36,22 @@ import           VectorShuffling.Immutable (shuffle)
 
 type PlayerId = Int
 
+type Proposal = [WhiteCard]
+
 data Table
-    = TableProposing BlackCard (HMS.HashMap PlayerId [WhiteCard])
+    = TableProposing
+        !BlackCard
+        !(HMS.HashMap PlayerId Proposal)
+    | TableVoting
+        !BlackCard
+        !(HMS.HashMap PlayerId Proposal)
+        !(V.Vector (Proposal, [PlayerId]))
+        !(HMS.HashMap PlayerId Int)
     deriving (Show)
 
 data Player = Player
-    { _playerName :: Text
-    , _playerHand :: [WhiteCard]
+    { _playerName :: !Text
+    , _playerHand :: !(V.Vector WhiteCard)
     } deriving (Show)
 
 data Game = Game
@@ -97,7 +106,7 @@ joinGame :: Game -> (PlayerId, Game)
 joinGame = runState $ do
     pid <- gameNextPlayerId %%= (\x -> (x, x + 1))
     let name = "Player " <> T.pack (show pid)
-    hand <- replicateM 6 popWhiteCard
+    hand <- V.replicateM 6 popWhiteCard
     gamePlayers %= HMS.insert pid (Player name hand)
     pure pid
 
@@ -108,20 +117,34 @@ blackCardBlanks :: Cards -> BlackCard -> Int
 blackCardBlanks cards (BlackCard c) =
     maybe 0 (length . T.breakOnAll "\\BLANK") $ cardsBlack cards V.!? c
 
+stepGame :: Game -> Game
+stepGame game = case game ^. gameTable of
+    TableProposing black proposals
+        | HMS.null ((game ^. gamePlayers) `HMS.difference` proposals) ->
+            let proposalsMap = HMS.fromListWith (++) $ do
+                    (pid, proposal) <- HMS.toList proposals
+                    pure (proposal, [pid])
+                (shuffled, seed) = shuffle
+                    (V.fromList $ HMS.toList proposalsMap) (game ^. gameSeed) in
+            game & gameSeed .~ seed
+                & gameTable .~ TableVoting black proposals shuffled HMS.empty
+        | otherwise -> game
+    TableVoting _ _ _ _ -> game
+
 processClientMessage :: PlayerId -> ClientMessage -> Game -> Game
 processClientMessage pid msg game = case msg of
     ChangeMyName name ->
         game & gamePlayers . ix pid . playerName .~ name
     ProposeWhiteCards cs
-        -- Bad card(s) proposed.
+        -- Bad card(s) proposed, i.e. not in hand of player.
         | any (not . (`elem` hand)) cs -> game
         -- Proposal already made.
         | Just _ <- game ^? gameTable . _TableProposing . _2 . ix pid -> game
         -- Not enough cards submitted.
         | Just b <- game ^? gameTable . _TableProposing . _1
         , blackCardBlanks (game ^. gameCards) b /= length cs -> game
-        -- TODO: Check that the card is in the hand of the player.
-        | otherwise                                  ->
+        -- All good.
+        | otherwise -> stepGame $
             game & gameTable . _TableProposing . _2 . at pid .~ Just cs
   where
     hand = game ^.. gamePlayers . ix pid . playerHand . traverse
@@ -133,15 +156,24 @@ gameViewForPlayer self game =
             guard $ pid /= self
             pure $ Opponent (p ^. playerName) $ case game ^. gameTable of
                 TableProposing _ proposals -> HMS.member pid proposals
+                TableVoting _ _ _ votes -> HMS.member pid votes
 
         player = game ^. gamePlayers . at self
 
         table = case game ^. gameTable of
             TableProposing black proposals ->
-                Proposing black . fromMaybe [] $ HMS.lookup self proposals in
+                Proposing black . fromMaybe [] $ HMS.lookup self proposals
+            TableVoting black proposals shuffled votes -> Voting
+                black
+                (fromMaybe [] $ HMS.lookup self proposals)
+                [ proposal
+                | (proposal, players) <- V.toList shuffled
+                , not $ self `elem` players
+                ]
+                (HMS.lookup self votes) in
     GameView
         { gameViewOpponents = opponents
         , gameViewMyName    = maybe "" (^. playerName) player
         , gameViewTable     = table
-        , gameViewHand      = maybe [] (^. playerHand) player
+        , gameViewHand      = player ^.. traverse . playerHand . traverse
         }

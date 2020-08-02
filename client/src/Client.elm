@@ -94,6 +94,7 @@ view model = case model of
 tableBlackCard : GameState -> Maybe BlackCard
 tableBlackCard game = case game.view.table of
     Messages.Proposing b _ -> Just b
+    Messages.Voting b _ _ _ -> Just b
 
 selectedWhiteCards : GameState -> List WhiteCard
 selectedWhiteCards game = case game.view.table of
@@ -116,6 +117,13 @@ viewTable game = case game.view.table of
             ]
             [Html.text "Propose"]
         ]
+    Messages.Voting black myProposal proposals myVote -> Html.div [] <|
+        [ Html.h2 [] [Html.text "Your proposal"]
+        , blackCard game.cards black myProposal
+        ] ++
+        [ Html.h2 [] [Html.text "Opponent proposals"]
+        ] ++
+        List.map (blackCard game.cards black) proposals
 
 intersperseWith : List a -> a -> List a -> List a
 intersperseWith values def list = case list of

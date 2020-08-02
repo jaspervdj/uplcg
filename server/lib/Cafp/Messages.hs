@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric   #-}
 {-# LANGUAGE TemplateHaskell #-}
 module Cafp.Messages
     ( BlackCard (..)
@@ -10,17 +11,23 @@ module Cafp.Messages
     , ClientMessage (..)
     ) where
 
-import           Data.Text   (Text)
-import           Data.Vector (Vector)
+import           Data.Hashable (Hashable)
+import           Data.Text     (Text)
+import           Data.Vector   (Vector)
 import           Elm.Derive
+import           GHC.Generics  (Generic)
 
-data BlackCard = BlackCard Int deriving (Eq, Show)
+data BlackCard = BlackCard Int deriving (Eq, Generic, Show)
 
-data WhiteCard = WhiteCard Int deriving (Eq, Show)
+instance Hashable BlackCard
+
+data WhiteCard = WhiteCard Int deriving (Eq, Generic, Show)
+
+instance Hashable WhiteCard
 
 data Cards = Cards
-    { cardsBlack        :: Vector Text
-    , cardsWhite        :: Vector Text
+    { cardsBlack :: Vector Text
+    , cardsWhite :: Vector Text
     } deriving (Show)
 
 data Opponent = Opponent
@@ -30,6 +37,11 @@ data Opponent = Opponent
 
 data TableView
     = Proposing BlackCard [WhiteCard]
+    | Voting
+        BlackCard
+        [WhiteCard]    -- ^ My proposal
+        [[WhiteCard]]  -- ^ Proposals to vote for
+        (Maybe Int)    -- ^ My vote
     deriving (Show)
 
 data GameView = GameView
