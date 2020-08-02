@@ -21,9 +21,10 @@ module Cafp.Game
 import           Cafp.Messages
 import           Control.Lens              (Lens', at, ix, over, to, traverseOf,
                                             (%%=), (%=), (%~), (&), (.~), (^.),
-                                            (^..), (^?), _1, _2, (.=), _3)
+                                            (^..), (^?), _1, _2, (.=), _3, use, anyOf)
 import           Control.Lens.TH           (makeLenses, makePrisms)
 import           Control.Monad             (guard, replicateM, (>=>))
+import Data.Monoid (Any (..))
 import           Control.Monad.State       (State, state, execState, runState)
 import qualified Data.HashMap.Strict       as HMS
 import           Data.Maybe                (fromMaybe)
@@ -49,8 +50,9 @@ data Table
     deriving (Show)
 
 data Player = Player
-    { _playerName :: !Text
-    , _playerHand :: !(V.Vector WhiteCard)
+    { _playerName  :: !Text
+    , _playerHand  :: !(V.Vector WhiteCard)
+    , _playerAdmin :: !Bool
     } deriving (Show)
 
 data Game = Game
@@ -104,9 +106,11 @@ newGame cards gen = flip execState state0 $ do
 joinGame :: Game -> (PlayerId, Game)
 joinGame = runState $ do
     pid <- gameNextPlayerId %%= (\x -> (x, x + 1))
+    hasAdmin <- use (gamePlayers . traverse . playerAdmin . Any)
     let name = "Player " <> T.pack (show pid)
+        admin = not (getAny hasAdmin)
     hand <- V.replicateM 6 popWhiteCard
-    gamePlayers %= HMS.insert pid (Player name hand)
+    gamePlayers %= HMS.insert pid (Player name hand admin)
     pure pid
 
 leaveGame :: PlayerId -> Game -> Game
