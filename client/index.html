@@ -10,12 +10,16 @@
     <script type="text/JavaScript" src="$CAFP_BASE/assets/client.js"></script>
     <script>
       var app = Elm.Client.init({node: document.querySelector("main")});
+      var protocol = "ws:";
+      if(document.location.protocol == "https:") {
+          protocol = "wss:"
+      }
       var path = document.location.pathname;
       if(path.startsWith("$CAFP_BASE")) {
           path = path.substr("$CAFP_BASE".length);
       }
       var roomId = path.split("/")[2];
-      var url = "ws://" + document.location.host +
+      var url = protocol + "//" + document.location.host +
         "$CAFP_BASE/rooms/" + roomId + "/events";
       var socket = new WebSocket(url);
       app.ports.webSocketOut.subscribe(function(message) {
