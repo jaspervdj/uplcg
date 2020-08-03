@@ -13,9 +13,13 @@ import           Control.Exception              (bracket)
 import           Control.Lens                   ((^.))
 import           Control.Monad                  (forever, when)
 import qualified Data.Aeson                     as Aeson
+import qualified Data.ByteString                as B
 import qualified Data.ByteString.Lazy           as BL
 import           Data.Foldable                  (for_)
 import qualified Data.HashMap.Strict            as HMS
+import qualified Data.List                      as L
+import           Data.Maybe                     (fromMaybe)
+import           Data.String                    (fromString)
 import qualified Data.Text                      as T
 import qualified Data.Text.Encoding             as T
 import qualified Data.Text.IO                   as T
@@ -24,6 +28,7 @@ import qualified Network.Wai                    as Wai
 import qualified Network.Wai.Handler.Warp       as Warp
 import qualified Network.Wai.Handler.WebSockets as WaiWs
 import qualified Network.WebSockets             as WS
+import           System.Environment             (getEnv)
 import qualified System.IO                      as IO
 import           System.Random                  (StdGen, newStdGen)
 import qualified Web.Scotty                     as Scotty
@@ -61,6 +66,7 @@ newRoom server gen = Room
     <$> (STM.newTVar $ newGame (serverCards server) gen)
     <*> STM.newTVar HMS.empty
 
+
 scottyApp :: IO Wai.Application
 scottyApp = Scotty.scottyApp $ do
     Scotty.get "/rooms/:id/" $ do
@@ -81,9 +87,9 @@ scottyApp = Scotty.scottyApp $ do
 routePendingConnection :: WS.PendingConnection -> Maybe RoomId
 routePendingConnection pending =
     let path = T.decodeUtf8 . WS.requestPath $ WS.pendingRequest pending in
-    case T.split (== '/') path of
-        [_, "rooms", roomId, "events"] -> Just roomId
-        _                              -> Nothing
+    case splitPath path of
+        ["rooms", roomId, "events"] -> Just roomId
+        _                           -> Nothing
 
 getOrCreateRoom :: Server -> RoomId -> IO Room
 getOrCreateRoom server roomId = MVar.modifyMVar (serverRooms server) $ \rooms ->
@@ -146,11 +152,28 @@ wsApp server pc = case routePendingConnection pc of
             Nothing -> do
                 warning $ "Could not decode client message: " ++ show msg
 
+splitPath :: T.Text -> [T.Text]
+splitPath = filter (not . T.null) . T.split (== '/')
+
+baseUrl :: [T.Text] -> Wai.Middleware
+baseUrl prefix application = \req ->
+    case L.stripPrefix prefix (Wai.pathInfo req) of
+        Nothing   -> application req
+        Just path -> application req
+            { Wai.pathInfo = path
+            , Wai.rawPathInfo = fromMaybe (Wai.rawPathInfo req) .
+                B.stripPrefix bs $ Wai.rawPathInfo req
+            }
+  where
+    bs = T.encodeUtf8 $ "/" <> T.intercalate "/" prefix
+
 main :: IO ()
 main = do
-    let port = 3000
-        settings = Warp.setPort port Warp.defaultSettings
+    host <- fromString <$> getEnv "CAFP_HOSTNAME"
+    port <- read <$> getEnv "CAFP_PORT"
+    base <- splitPath . T.pack <$> getEnv "CAFP_BASE"
+    let settings = Warp.setPort port . Warp.setHost host $ Warp.defaultSettings
     server <- newServer
     sapp <- scottyApp
-    Warp.runSettings settings $
+    Warp.runSettings settings $ baseUrl base $
         WaiWs.websocketsOr WS.defaultConnectionOptions (wsApp server) sapp

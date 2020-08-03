@@ -42,14 +42,7 @@ type alias GameState =
 type Model
     = Error String
     | Connecting
-        { roomId : String
-        }
     | Game GameState
-
-parseRoomId : Url -> Result String String
-parseRoomId url = case String.split "/" url.path of
-    _ :: "rooms" :: roomId :: _ -> Ok roomId
-    _ -> Err <| "Invalid path: " ++ url.path
 
 viewPlayer : Messages.PlayerView -> Html msg
 viewPlayer player = Html.div [] <|
@@ -64,10 +57,7 @@ view model = case model of
         [ Html.h1 [] [Html.text "Error"]
         , Html.p [] [Html.text str]
         ]
-    Connecting state ->
-        [ Html.h1 []
-            [Html.text <| "Connecting to room " ++ state.roomId ++ "..."]
-        ]
+    Connecting -> [Html.h1 [] [Html.text "Connecting to room..."]]
     Game game ->
         [ Html.h1 [] [Html.text "Players"]
         , Html.ul [] <| List.map
@@ -305,9 +295,7 @@ update msg model = case msg of
 
 main : Program () Model Msg
 main = Browser.application
-    { init = \() url key -> case parseRoomId url of
-        Err str -> (Error <| "Could not parse room ID: " ++ str, Cmd.none)
-        Ok roomId -> (Connecting {roomId = roomId}, Cmd.none)
+    { init = \() url key -> (Connecting, Cmd.none)
     , update = update
     , subscriptions = subscriptions
     , view = \model -> {title = "Client", body = view model}

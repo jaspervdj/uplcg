@@ -1,19 +1,22 @@
 <!DOCTYPE HTML>
 <html>
-<head>
-  <meta charset="UTF-8">
-  <title>Client</title>
-  <link rel="stylesheet" type="text/css" href="/assets/style.css">
-</head>
+  <head>
+    <meta charset="UTF-8">
+    <title>Client</title>
+    <link rel="stylesheet" type="text/css" href="$CAFP_BASE/assets/style.css">
+  </head>
   <body>
     <div id="main"></div>
-    <script type="text/JavaScript" src="/assets/client.js"></script>
+    <script type="text/JavaScript" src="$CAFP_BASE/assets/client.js"></script>
     <script>
       var app = Elm.Client.init({node: document.querySelector("main")});
-
-      var roomId = document.location.pathname.split("/")[2];
+      var path = document.location.pathname;
+      if(path.startsWith("$CAFP_BASE")) {
+          path = path.substr("$CAFP_BASE".length);
+      }
+      var roomId = path.split("/")[2];
       var url = "ws://" + document.location.host +
-        "/rooms/" + roomId + "/events";
+        "$CAFP_BASE/rooms/" + roomId + "/events";
       var socket = new WebSocket(url);
       app.ports.webSocketOut.subscribe(function(message) {
         socket.send(message);

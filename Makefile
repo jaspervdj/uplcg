@@ -1,3 +1,5 @@
+include config.mk
+
 HS_SOURCES=$(shell find server/lib/ server/src -name '*.hs')
 ELM_SOURCES=$(shell find client/src -name '*.elm')
 ELM_MESSAGES_SOURCE=client/src/Messages.elm
@@ -9,8 +11,13 @@ build: server/assets/client.js \
 	server/assets/black.txt \
 	server/assets/white.txt
 
+.PHONY: server
 server: build
-	cd server && stack exec cafp-server
+	(cd server && \
+	    CAFP_HOSTNAME=$(CAFP_HOSTNAME) \
+	    CAFP_PORT=$(CAFP_PORT) \
+	    CAFP_BASE=$(CAFP_BASE) \
+	    stack exec cafp-server)
 
 .PHONY: stack_build
 stack_build: $(HS_SOURCES)
@@ -23,8 +30,8 @@ server/assets/client.js: $(ELM_MESSAGES_SOURCE) $(ELM_SOURCES)
 	mkdir -p server/assets
 	cd client && elm make src/Client.elm --output=../server/assets/client.js
 
-server/assets/client.html: client/index.html
-	cp client/index.html $@
+server/assets/client.html: client/index.html config.mk
+	sed "s@\$$CAFP_BASE@$(CAFP_BASE)@" $< >$@
 
 server/assets/style.css: client/style.css
 	cp $< $@
