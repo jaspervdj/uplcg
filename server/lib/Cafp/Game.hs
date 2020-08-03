@@ -23,7 +23,7 @@ import           Cafp.Messages
 import           Control.Lens                 (Lens', at, iall, imap, ix, orOf,
                                                over, to, (%%=), (%=), (&), (+=),
                                                (.=), (.~), (^.), (^..), (^?),
-                                               _1, _2, _3)
+                                               _1, _2, _3, (%~))
 import           Control.Lens.TH              (makeLenses, makePrisms)
 import           Control.Monad                (guard)
 import           Control.Monad.State          (State, execState, modify,
@@ -184,8 +184,12 @@ stepGame game = case game ^. gameTable of
                     pure (proposal, [pid])
                 (shuffled, seed) = shuffle
                     (V.fromList $ HMS.toList proposalsMap) (game ^. gameSeed) in
-            game & gameSeed .~ seed
+            game
+                & gameSeed .~ seed
                 & gameTable .~ TableVoting black shuffled HMS.empty
+                & gamePlayers %~ imap (\pid player ->
+                    let used = fromMaybe V.empty $ HMS.lookup pid proposals in
+                    player & playerHand %~ V.filter (not . (`V.elem` used)))
         | otherwise -> game
     TableVoting black shuffled votes
         -- Everyone has voted.
