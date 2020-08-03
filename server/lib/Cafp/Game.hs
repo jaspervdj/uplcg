@@ -20,10 +20,10 @@ module Cafp.Game
     ) where
 
 import           Cafp.Messages
-import           Control.Lens                 (Lens', at, iall, imap, ix, orOf,
-                                               over, to, (%%=), (%=), (&), (+=),
-                                               (.=), (.~), (^.), (^..), (^?),
-                                               _1, _2, _3, (%~))
+import           Control.Lens                 (Lens', at, iall, ifor_, imap, ix,
+                                               orOf, over, to, (%%=), (%=),
+                                               (%~), (&), (+=), (.=), (.~),
+                                               (^.), (^..), (^?), _1, _2, _3)
 import           Control.Lens.TH              (makeLenses, makePrisms)
 import           Control.Monad                (guard)
 import           Control.Monad.State          (State, execState, modify,
@@ -114,6 +114,16 @@ newGame cards gen = flip execState state0 $ do
         , _gameNextPlayerId = 1
         }
 
+defaultHandSize :: Int
+defaultHandSize = 8
+
+drawNewWhiteCards :: Game -> Game
+drawNewWhiteCards game = flip execState game $ do
+    ifor_ (game ^. gamePlayers) $ \pid player -> do
+        let num = defaultHandSize - V.length (player ^. playerHand)
+        new <- V.replicateM num popWhiteCard
+        gamePlayers . ix pid . playerHand %= (<> new)
+
 assignAdmin :: Game -> Game
 assignAdmin game
     -- Admin already assigned.
@@ -128,7 +138,7 @@ joinGame :: Game -> (PlayerId, Game)
 joinGame = runState $ do
     pid <- gameNextPlayerId %%= (\x -> (x, x + 1))
     let name = "Player " <> T.pack (show pid)
-    hand <- V.replicateM 6 popWhiteCard
+    hand <- V.replicateM defaultHandSize popWhiteCard
     gamePlayers %= HMS.insert pid (Player name hand False 0)
     modify assignAdmin
     pure pid
@@ -239,6 +249,7 @@ processClientMessage pid msg game = case msg of
             flip execState game $ do
             black <- popBlackCard
             gameTable .= TableProposing black HMS.empty
+            modify drawNewWhiteCards
         | otherwise -> game
   where
     hand = game ^.. gamePlayers . ix pid . playerHand . traverse
