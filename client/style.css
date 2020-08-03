@@ -25,6 +25,10 @@ html {
   background: #003300;
 }
 
+.winner {
+  background: #701e58;
+}
+
 .white {
   color: black;
   background: white;

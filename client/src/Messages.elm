@@ -56,25 +56,51 @@ jsonEncCards  val =
 
 
 
-type alias Opponent  =
+type alias PlayerView  =
    { name: String
    , admin: Bool
    , ready: Bool
+   , points: Int
    }
 
-jsonDecOpponent : Json.Decode.Decoder ( Opponent )
-jsonDecOpponent =
-   Json.Decode.succeed (\pname padmin pready -> {name = pname, admin = padmin, ready = pready})
+jsonDecPlayerView : Json.Decode.Decoder ( PlayerView )
+jsonDecPlayerView =
+   Json.Decode.succeed (\pname padmin pready ppoints -> {name = pname, admin = padmin, ready = pready, points = ppoints})
    |> required "name" (Json.Decode.string)
    |> required "admin" (Json.Decode.bool)
    |> required "ready" (Json.Decode.bool)
+   |> required "points" (Json.Decode.int)
 
-jsonEncOpponent : Opponent -> Value
-jsonEncOpponent  val =
+jsonEncPlayerView : PlayerView -> Value
+jsonEncPlayerView  val =
    Json.Encode.object
    [ ("name", Json.Encode.string val.name)
    , ("admin", Json.Encode.bool val.admin)
    , ("ready", Json.Encode.bool val.ready)
+   , ("points", Json.Encode.int val.points)
+   ]
+
+
+
+type alias VotedView  =
+   { proposal: (List WhiteCard)
+   , score: Int
+   , winners: (List String)
+   }
+
+jsonDecVotedView : Json.Decode.Decoder ( VotedView )
+jsonDecVotedView =
+   Json.Decode.succeed (\pproposal pscore pwinners -> {proposal = pproposal, score = pscore, winners = pwinners})
+   |> required "proposal" (Json.Decode.list (jsonDecWhiteCard))
+   |> required "score" (Json.Decode.int)
+   |> required "winners" (Json.Decode.list (Json.Decode.string))
+
+jsonEncVotedView : VotedView -> Value
+jsonEncVotedView  val =
+   Json.Encode.object
+   [ ("proposal", (Json.Encode.list jsonEncWhiteCard) val.proposal)
+   , ("score", Json.Encode.int val.score)
+   , ("winners", (Json.Encode.list Json.Encode.string) val.winners)
    ]
 
 
@@ -82,12 +108,14 @@ jsonEncOpponent  val =
 type TableView  =
     Proposing BlackCard (List WhiteCard)
     | Voting BlackCard (List (List WhiteCard)) Int (Maybe Int)
+    | Tally BlackCard (List VotedView)
 
 jsonDecTableView : Json.Decode.Decoder ( TableView )
 jsonDecTableView =
     let jsonDecDictTableView = Dict.fromList
             [ ("Proposing", Json.Decode.lazy (\_ -> Json.Decode.map2 Proposing (Json.Decode.index 0 (jsonDecBlackCard)) (Json.Decode.index 1 (Json.Decode.list (jsonDecWhiteCard)))))
             , ("Voting", Json.Decode.lazy (\_ -> Json.Decode.map4 Voting (Json.Decode.index 0 (jsonDecBlackCard)) (Json.Decode.index 1 (Json.Decode.list (Json.Decode.list (jsonDecWhiteCard)))) (Json.Decode.index 2 (Json.Decode.int)) (Json.Decode.index 3 (Json.Decode.maybe (Json.Decode.int)))))
+            , ("Tally", Json.Decode.lazy (\_ -> Json.Decode.map2 Tally (Json.Decode.index 0 (jsonDecBlackCard)) (Json.Decode.index 1 (Json.Decode.list (jsonDecVotedView)))))
             ]
     in  decodeSumObjectWithSingleField  "TableView" jsonDecDictTableView
 
@@ -96,30 +124,31 @@ jsonEncTableView  val =
     let keyval v = case v of
                     Proposing v1 v2 -> ("Proposing", encodeValue (Json.Encode.list identity [jsonEncBlackCard v1, (Json.Encode.list jsonEncWhiteCard) v2]))
                     Voting v1 v2 v3 v4 -> ("Voting", encodeValue (Json.Encode.list identity [jsonEncBlackCard v1, (Json.Encode.list (Json.Encode.list jsonEncWhiteCard)) v2, Json.Encode.int v3, (maybeEncode (Json.Encode.int)) v4]))
+                    Tally v1 v2 -> ("Tally", encodeValue (Json.Encode.list identity [jsonEncBlackCard v1, (Json.Encode.list jsonEncVotedView) v2]))
     in encodeSumObjectWithSingleField keyval val
 
 
 
 type alias GameView  =
-   { opponents: (List Opponent)
-   , myName: String
+   { players: (List PlayerView)
+   , me: PlayerView
    , table: TableView
    , hand: (List WhiteCard)
    }
 
 jsonDecGameView : Json.Decode.Decoder ( GameView )
 jsonDecGameView =
-   Json.Decode.succeed (\popponents pmyName ptable phand -> {opponents = popponents, myName = pmyName, table = ptable, hand = phand})
-   |> required "opponents" (Json.Decode.list (jsonDecOpponent))
-   |> required "myName" (Json.Decode.string)
+   Json.Decode.succeed (\pplayers pme ptable phand -> {players = pplayers, me = pme, table = ptable, hand = phand})
+   |> required "players" (Json.Decode.list (jsonDecPlayerView))
+   |> required "me" (jsonDecPlayerView)
    |> required "table" (jsonDecTableView)
    |> required "hand" (Json.Decode.list (jsonDecWhiteCard))
 
 jsonEncGameView : GameView -> Value
 jsonEncGameView  val =
    Json.Encode.object
-   [ ("opponents", (Json.Encode.list jsonEncOpponent) val.opponents)
-   , ("myName", Json.Encode.string val.myName)
+   [ ("players", (Json.Encode.list jsonEncPlayerView) val.players)
+   , ("me", jsonEncPlayerView val.me)
    , ("table", jsonEncTableView val.table)
    , ("hand", (Json.Encode.list jsonEncWhiteCard) val.hand)
    ]
@@ -157,6 +186,7 @@ type ClientMessage  =
     ChangeMyName String
     | ProposeWhiteCards (List WhiteCard)
     | SubmitVote Int
+    | ConfirmTally 
 
 jsonDecClientMessage : Json.Decode.Decoder ( ClientMessage )
 jsonDecClientMessage =
@@ -164,6 +194,7 @@ jsonDecClientMessage =
             [ ("ChangeMyName", Json.Decode.lazy (\_ -> Json.Decode.map ChangeMyName (Json.Decode.string)))
             , ("ProposeWhiteCards", Json.Decode.lazy (\_ -> Json.Decode.map ProposeWhiteCards (Json.Decode.list (jsonDecWhiteCard))))
             , ("SubmitVote", Json.Decode.lazy (\_ -> Json.Decode.map SubmitVote (Json.Decode.int)))
+            , ("ConfirmTally", Json.Decode.lazy (\_ -> Json.Decode.succeed ConfirmTally))
             ]
     in  decodeSumObjectWithSingleField  "ClientMessage" jsonDecDictClientMessage
 
@@ -173,6 +204,7 @@ jsonEncClientMessage  val =
                     ChangeMyName v1 -> ("ChangeMyName", encodeValue (Json.Encode.string v1))
                     ProposeWhiteCards v1 -> ("ProposeWhiteCards", encodeValue ((Json.Encode.list jsonEncWhiteCard) v1))
                     SubmitVote v1 -> ("SubmitVote", encodeValue (Json.Encode.int v1))
+                    ConfirmTally  -> ("ConfirmTally", encodeValue (Json.Encode.list identity []))
     in encodeSumObjectWithSingleField keyval val
 
 

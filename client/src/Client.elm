@@ -26,6 +26,8 @@ type Msg
     -- Voting
     | SelectVote Int
     | SubmitVote
+    -- Tally
+    | ConfirmTally
 
 type alias Cards = {black : Array String, white : Array String}
 
@@ -49,12 +51,12 @@ parseRoomId url = case String.split "/" url.path of
     _ :: "rooms" :: roomId :: _ -> Ok roomId
     _ -> Err <| "Invalid path: " ++ url.path
 
-viewOpponent : Messages.Opponent -> Html msg
-viewOpponent opponent = Html.div [] <|
-    [ Html.text opponent.name
+viewPlayer : Messages.PlayerView -> Html msg
+viewPlayer player = Html.div [] <|
+    [ Html.text player.name
     ] ++
-    (if opponent.admin then [Html.text " 👑"] else []) ++
-    (if opponent.ready then [Html.text " ✅"] else [])
+    (if player.admin then [Html.text " 👑"] else []) ++
+    (if player.ready then [Html.text " ✅"] else [])
 
 view : Model -> List (Html Msg)
 view model = case model of
@@ -67,10 +69,10 @@ view model = case model of
             [Html.text <| "Connecting to room " ++ state.roomId ++ "..."]
         ]
     Game game ->
-        [ Html.h1 [] [Html.text "Opponents"]
+        [ Html.h1 [] [Html.text "Players"]
         , Html.ul [] <| List.map
-            (\o -> Html.li [] [viewOpponent o])
-            game.view.opponents
+            (\o -> Html.li [] [viewPlayer o])
+            game.view.players
         , Html.h1 [] [Html.text "You"]
         , Html.form
             [ Html.Attributes.action ""
@@ -84,7 +86,8 @@ view model = case model of
             , Html.button
                 [ Html.Attributes.type_ "submit"
                 , Html.Attributes.disabled <|
-                    game.view.myName == game.changeMyName
+                    game.view.me.name == game.changeMyName ||
+                    String.length game.changeMyName > 32
                 ]
                 [Html.text "Update name"]
             ]
@@ -100,6 +103,7 @@ tableBlackCard : GameState -> Maybe BlackCard
 tableBlackCard game = case game.view.table of
     Messages.Proposing b _ -> Just b
     Messages.Voting b _ _ _ -> Just b
+    Messages.Tally b _ -> Just b
 
 selectedWhiteCards : GameState -> List WhiteCard
 selectedWhiteCards game = case game.view.table of
@@ -147,6 +151,23 @@ viewTable game = case game.view.table of
             ]
             [Html.text "Vote"]
         ]
+
+    Messages.Tally black results -> Html.div [] <|
+        [Html.h2 [] [Html.text "Vote results"]] ++
+        List.map (\voted ->
+            let attrs =
+                    if List.length voted.winners > 0 then
+                        [Html.Attributes.class "winner"]
+                    else
+                        [] in
+            blackCard attrs game.cards black voted.proposal)
+            results ++
+        if not game.view.me.admin then
+            []
+        else
+            [ Html.button
+                [Html.Events.onClick ConfirmTally] [Html.text "Next round"]
+            ]
 
 intersperseWith : List a -> a -> List a -> List a
 intersperseWith values def list = case list of
@@ -222,7 +243,7 @@ update msg model = case msg of
                         ( Game
                             { cards = {black = Array.empty, white = Array.empty}
                             , view = gameView
-                            , changeMyName = gameView.myName
+                            , changeMyName = gameView.me.name
                             , selectedWhiteCards = []
                             , selectedVote = Nothing
                             }
@@ -279,6 +300,8 @@ update msg model = case msg of
                 )
             _ -> (model, Cmd.none)
         _ -> (model, Cmd.none)
+
+    ConfirmTally -> (model, send <| Messages.ConfirmTally)
 
 main : Program () Model Msg
 main = Browser.application
