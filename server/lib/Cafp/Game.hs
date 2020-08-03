@@ -19,16 +19,17 @@ module Cafp.Game
     ) where
 
 import           Cafp.Messages
-import           Control.Lens              (Lens', at, ix, over, to, traverseOf,
-                                            (%%=), (%=), (%~), (&), (.~), (^.),
-                                            (^..), (^?), _1, _2, (.=), _3, use, anyOf)
+import           Control.Lens              (Lens', at, ix, orOf, over, to,
+                                            (%%=), (%=), (&), (.=), (.~), (^.),
+                                            (^..), (^?), _1, _2, _3)
 import           Control.Lens.TH           (makeLenses, makePrisms)
-import           Control.Monad             (guard, replicateM, (>=>))
-import Data.Monoid (Any (..))
-import           Control.Monad.State       (State, state, execState, runState)
+import           Control.Monad             (guard)
+import           Control.Monad.State       (State, execState, modify, runState,
+                                            state)
+import           Data.Bifunctor            (first)
 import qualified Data.HashMap.Strict       as HMS
+import           Data.List                 (sort)
 import           Data.Maybe                (fromMaybe)
-import Data.Bifunctor (first)
 import           Data.Text                 (Text)
 import qualified Data.Text                 as T
 import qualified Data.Vector               as V
@@ -103,18 +104,27 @@ newGame cards gen = flip execState state0 $ do
         , _gameNextPlayerId = 1
         }
 
+assignAdmin :: Game -> Game
+assignAdmin game
+    -- Admin already assigned.
+    | orOf (gamePlayers . traverse . playerAdmin) game = game
+    -- Assign to first player
+    | (p1 : _) <- sort (game ^. gamePlayers . to HMS.keys) =
+        game & gamePlayers . ix p1 . playerAdmin .~ True
+    -- No players
+    | otherwise = game
+
 joinGame :: Game -> (PlayerId, Game)
 joinGame = runState $ do
     pid <- gameNextPlayerId %%= (\x -> (x, x + 1))
-    haveAdmin <- use (gamePlayers . traverse . playerAdmin . to Any)
     let name = "Player " <> T.pack (show pid)
-        admin = not (getAny haveAdmin)
     hand <- V.replicateM 6 popWhiteCard
-    gamePlayers %= HMS.insert pid (Player name hand admin)
+    gamePlayers %= HMS.insert pid (Player name hand False)
+    modify assignAdmin
     pure pid
 
 leaveGame :: PlayerId -> Game -> Game
-leaveGame pid = over gamePlayers $ HMS.delete pid
+leaveGame pid = assignAdmin . over gamePlayers (HMS.delete pid)
 
 blackCardBlanks :: Cards -> BlackCard -> Int
 blackCardBlanks cards (BlackCard c) =
@@ -172,7 +182,7 @@ gameViewForPlayer self game =
             guard $ pid /= self
             let ready = case game ^. gameTable of
                     TableProposing _ proposals -> HMS.member pid proposals
-                    TableVoting _ _ votes -> HMS.member pid votes
+                    TableVoting _ _ votes      -> HMS.member pid votes
             pure $ Opponent (p ^. playerName) (p ^. playerAdmin) ready
 
         player = game ^. gamePlayers . at self
