@@ -20,13 +20,12 @@ module Cafp.Game
     ) where
 
 import           Cafp.Messages
-import           Control.Lens                 (Lens', at, imap, ix, orOf, over,
-                                               to, (%%=), (%=), (&), (+=), (.=),
-                                               (.~), (^.), (^..), (^?), _1, _2,
-                                               _3)
+import           Control.Lens                 (Lens', at, iall, imap, ix, orOf,
+                                               over, to, (%%=), (%=), (&), (+=),
+                                               (.=), (.~), (^.), (^..), (^?),
+                                               _1, _2, _3)
 import           Control.Lens.TH              (makeLenses, makePrisms)
 import           Control.Monad                (guard)
-import Data.Ord (comparing, Down (..))
 import           Control.Monad.State          (State, execState, modify,
                                                runState, state)
 import           Data.Bifunctor               (first)
@@ -34,6 +33,7 @@ import           Data.Foldable                (for_)
 import qualified Data.HashMap.Strict          as HMS
 import           Data.List                    (sort)
 import           Data.Maybe                   (fromMaybe)
+import           Data.Ord                     (Down (..), comparing)
 import           Data.Text                    (Text)
 import qualified Data.Text                    as T
 import qualified Data.Vector                  as V
@@ -178,7 +178,7 @@ stepGame :: Game -> Game
 stepGame game = case game ^. gameTable of
     TableProposing black proposals
         -- Everyone has proposed.
-        | HMS.null ((game ^. gamePlayers) `HMS.difference` proposals) ->
+        | iall (\pid _ -> HMS.member pid proposals) (game ^. gamePlayers) ->
             let proposalsMap = HMS.fromListWith (++) $ do
                     (pid, proposal) <- HMS.toList proposals
                     pure (proposal, [pid])
@@ -189,7 +189,7 @@ stepGame game = case game ^. gameTable of
         | otherwise -> game
     TableVoting black shuffled votes
         -- Everyone has voted.
-        | HMS.null ((game ^. gamePlayers) `HMS.difference` votes) ->
+        | iall (\pid _ -> HMS.member pid votes) (game ^. gamePlayers) ->
             let (voted, wins) = tallyVotes game shuffled votes in
             flip execState game $ do
             for_ wins $ \win -> gamePlayers . ix win . playerPoints += 1
