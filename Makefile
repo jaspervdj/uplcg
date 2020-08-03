@@ -3,6 +3,7 @@ include config.mk
 HS_SOURCES=$(shell find server/lib/ server/src -name '*.hs')
 ELM_SOURCES=$(shell find client/src -name '*.elm')
 ELM_MESSAGES_SOURCE=client/src/Messages.elm
+STACK_BIN=$(shell cd server && stack path --local-install-root)/bin
 
 .PHONY: build
 build: server/assets/client.js \
@@ -10,6 +11,11 @@ build: server/assets/client.js \
 	server/assets/style.css \
 	server/assets/black.txt \
 	server/assets/white.txt
+
+.PHONY: docker
+docker:
+	docker build -t jaspervdj/cafp .
+	docker push jaspervdj/cafp
 
 .PHONY: server
 server: build
