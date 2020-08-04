@@ -107,14 +107,14 @@ jsonEncVotedView  val =
 
 type TableView  =
     Proposing BlackCard (List WhiteCard)
-    | Voting BlackCard (List (List WhiteCard)) Int (Maybe Int)
+    | Voting BlackCard (List (List WhiteCard)) (Maybe Int) (Maybe Int)
     | Tally BlackCard (List VotedView)
 
 jsonDecTableView : Json.Decode.Decoder ( TableView )
 jsonDecTableView =
     let jsonDecDictTableView = Dict.fromList
             [ ("Proposing", Json.Decode.lazy (\_ -> Json.Decode.map2 Proposing (Json.Decode.index 0 (jsonDecBlackCard)) (Json.Decode.index 1 (Json.Decode.list (jsonDecWhiteCard)))))
-            , ("Voting", Json.Decode.lazy (\_ -> Json.Decode.map4 Voting (Json.Decode.index 0 (jsonDecBlackCard)) (Json.Decode.index 1 (Json.Decode.list (Json.Decode.list (jsonDecWhiteCard)))) (Json.Decode.index 2 (Json.Decode.int)) (Json.Decode.index 3 (Json.Decode.maybe (Json.Decode.int)))))
+            , ("Voting", Json.Decode.lazy (\_ -> Json.Decode.map4 Voting (Json.Decode.index 0 (jsonDecBlackCard)) (Json.Decode.index 1 (Json.Decode.list (Json.Decode.list (jsonDecWhiteCard)))) (Json.Decode.index 2 (Json.Decode.maybe (Json.Decode.int))) (Json.Decode.index 3 (Json.Decode.maybe (Json.Decode.int)))))
             , ("Tally", Json.Decode.lazy (\_ -> Json.Decode.map2 Tally (Json.Decode.index 0 (jsonDecBlackCard)) (Json.Decode.index 1 (Json.Decode.list (jsonDecVotedView)))))
             ]
     in  decodeSumObjectWithSingleField  "TableView" jsonDecDictTableView
@@ -123,7 +123,7 @@ jsonEncTableView : TableView -> Value
 jsonEncTableView  val =
     let keyval v = case v of
                     Proposing v1 v2 -> ("Proposing", encodeValue (Json.Encode.list identity [jsonEncBlackCard v1, (Json.Encode.list jsonEncWhiteCard) v2]))
-                    Voting v1 v2 v3 v4 -> ("Voting", encodeValue (Json.Encode.list identity [jsonEncBlackCard v1, (Json.Encode.list (Json.Encode.list jsonEncWhiteCard)) v2, Json.Encode.int v3, (maybeEncode (Json.Encode.int)) v4]))
+                    Voting v1 v2 v3 v4 -> ("Voting", encodeValue (Json.Encode.list identity [jsonEncBlackCard v1, (Json.Encode.list (Json.Encode.list jsonEncWhiteCard)) v2, (maybeEncode (Json.Encode.int)) v3, (maybeEncode (Json.Encode.int)) v4]))
                     Tally v1 v2 -> ("Tally", encodeValue (Json.Encode.list identity [jsonEncBlackCard v1, (Json.Encode.list jsonEncVotedView) v2]))
     in encodeSumObjectWithSingleField keyval val
 

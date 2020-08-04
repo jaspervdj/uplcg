@@ -272,7 +272,7 @@ gameViewForPlayer self game =
             TableVoting black shuffled votes -> Voting
                 black
                 (fst <$> shuffled)
-                (fromMaybe 0 $ V.findIndex ((self `elem`) . snd) shuffled)
+                (V.findIndex ((self `elem`) . snd) shuffled)
                 (HMS.lookup self votes)
             TableTally black voted -> Tally black voted in
     GameView

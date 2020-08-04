@@ -122,7 +122,7 @@ viewTable game = case game.view.table of
         ] ++
         List.indexedMap (\i proposal ->
             let attrs =
-                    if i == myProposal then
+                    if Just i == myProposal then
                         [Html.Attributes.class "mine"]
                     else if Just i == myVote || Just i == game.selectedVote then
                         [Html.Attributes.class "voted"]

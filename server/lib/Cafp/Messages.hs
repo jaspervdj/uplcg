@@ -49,8 +49,8 @@ data TableView
     | Voting
         !BlackCard
         !(Vector (Vector WhiteCard))  -- ^ Proposals to vote for
-        !Int            -- ^ My proposal
-        !(Maybe Int)    -- ^ My vote
+        !(Maybe Int)                  -- ^ My proposal
+        !(Maybe Int)                  -- ^ My vote
     | Tally !BlackCard !(Vector VotedView)
     deriving (Show)
 
