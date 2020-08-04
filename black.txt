@@ -1,3 +1,41 @@
 # ICFP2020 Cards
 \BLANK is just \BLANK in the Category of \BLANK.
-Really, \BLANK would be better without \BLANK.
+
+# Some cards taken from:
+# https://github.com/CardsAgainstCryptography/CAC/blob/master/src/white.txt
+# Slightly modified to take out most sexist / racist / ... stuff and comply
+# with the cafp format.  Added more \BLANKs to a few because we can.
+A PL conference is never complete without \BLANK.
+Both Microsoft and Apple have concerns with \BLANK.
+Did you hear that \BLANK is the new hot topic?
+Due to the Covid crisis, I have rekindled my enthusiasm for \BLANK.
+I always include \BLANK in my reviewer feedback.
+I can't believe I got away with \BLANK.
+I can't believe my grant application for \BLANK was denied!
+I can't concentrate without \BLANK.
+I drink to forget \BLANK.
+I find that \BLANK relieves pre-submission stress.
+I get by with a little help from \BLANK.
+I got 99 problems but \BLANK ain't one.
+I hope no one finds out about \BLANK.
+I just got out of an incomprehensible talk on \BLANK and \BLANK.
+I just hope the reviewers don't notice \BLANK.
+I only got through my PhD because of a long-winded explanation of \BLANK.
+I think I will skip the session on \BLANK this year.
+I was surprised to get no questions about \BLANK the end of my presentation on \BLANK.
+I woke up drenched in sweat from a nightmare about \BLANK.
+I woke up filled with shame about \BLANK.
+I'm hoping to avoid 2/3 of the program committee, because my paper is on \BLANK.
+I'm sorry, Professor, but I couldn't complete my homework because of \BLANK.
+My academic CV says I'm an expert on \BLANK.
+My career started with \BLANK.
+My favourite thing about online conferences is \BLANK.
+One regret I have from my PhD is \BLANK.
+Putting \BLANK in my application helped me immensely.
+Remembering \BLANK, then immediately vomiting.
+Self-isolation is fantastic for \BLANK.
+The next big thing will almost certainly be \BLANK.
+The talk that had the most influence on my personal life was \BLANK.
+When I am President of the United States, I will create the Department of \BLANK.
+Why can't I sleep at night? \BLANK
+\BLANK kept me up all night.
