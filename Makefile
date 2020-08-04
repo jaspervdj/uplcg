@@ -34,7 +34,7 @@ $(ELM_MESSAGES_SOURCE): stack_build
 
 server/assets/client.js: $(ELM_MESSAGES_SOURCE) $(ELM_SOURCES)
 	mkdir -p server/assets
-	cd client && elm make src/Client.elm --output=../server/assets/client.js
+	cd client && elm make src/Client.elm --optimize --output=../$@
 
 server/assets/client.html: client/index.html config.mk
 	sed "s@\$$CAFP_BASE@$(CAFP_BASE)@" $< >$@

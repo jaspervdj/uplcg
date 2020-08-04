@@ -224,9 +224,8 @@ update msg model = case msg of
     WebSocketIn json ->
         case Json.Decode.decodeString Messages.jsonDecServerMessage json of
             Err str -> (Error <| Json.Decode.errorToString str, Cmd.none)
-            Ok (Messages.Welcome playerId) ->
-                Debug.log ("Welcome " ++ String.fromInt playerId) (model, Cmd.none)
-            Ok Messages.Bye -> Debug.log "Bye" (model, Cmd.none)
+            Ok (Messages.Welcome playerId) -> (model, Cmd.none)
+            Ok Messages.Bye -> (model, Cmd.none)
             Ok (Messages.SyncGameView gameView) ->
                 case model of
                     Game game -> (Game {game | view = gameView}, Cmd.none)

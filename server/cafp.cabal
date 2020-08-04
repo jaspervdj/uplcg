@@ -54,5 +54,5 @@ Executable cafp-server
   Hs-source-dirs:   src
   Main-is:          Server.hs
   Default-language: Haskell2010
-  Ghc-options:      -Wall
+  Ghc-options:      -Wall -O2 -threaded -rtsopts "-with-rtsopts=-N"
   Build-depends:    base, cafp
