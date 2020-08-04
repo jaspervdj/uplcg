@@ -194,21 +194,31 @@ stepGame game = case game ^. gameTable of
                     pure (proposal, [pid])
                 (shuffled, seed) = shuffle
                     (V.fromList $ HMS.toList proposalsMap) (game ^. gameSeed) in
-            game
+            -- There's a recursive call because in some one-player cases we
+            -- skip the voting process entirely.
+            stepGame $ game
                 & gameSeed .~ seed
                 & gameTable .~ TableVoting black shuffled HMS.empty
                 & gamePlayers %~ imap (\pid player ->
                     let used = fromMaybe V.empty $ HMS.lookup pid proposals in
                     player & playerHand %~ V.filter (not . (`V.elem` used)))
         | otherwise -> game
+
     TableVoting black shuffled votes
         -- Everyone has voted.
-        | iall (\pid _ -> HMS.member pid votes) (game ^. gamePlayers) ->
+        | iall hasVoted (game ^. gamePlayers) ->
             let (voted, wins) = tallyVotes game shuffled votes in
             flip execState game $ do
             for_ wins $ \win -> gamePlayers . ix win . playerPoints += 1
             gameTable .= TableTally black voted
         | otherwise -> game
+      where
+        hasVoted pid _ = HMS.member pid votes ||
+            -- The person cannot vote for anything since all the proposals
+            -- are theirs.  This can happen when the game starts out with a
+            -- single person.
+            V.all (\(_, pids) -> pid `elem` pids) shuffled
+
     TableTally _ _ -> game
 
 processClientMessage :: PlayerId -> ClientMessage -> Game -> Game
