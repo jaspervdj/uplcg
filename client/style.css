@@ -2,14 +2,23 @@ html {
   font-size: 18px;
 }
 
+body {
+  display: flex;
+}
+
 .card {
-  padding: 18px;
   border-radius: 18px;
+  display: inline-block;
+  margin: 18px;
+  padding: 18px;
+  width: 300px;
+  vertical-align: text-top;
 }
 
 .black {
   color: white;
   background: black;
+  width: 600px;
 }
 
 .votable {
@@ -41,7 +50,11 @@ html {
 }
 
 .blank {
-  border-bottom: 2px solid white;
-  display: inline-block;
   min-width: 42px;
+  border-bottom: 1px solid white;
+  display: inline-block;
+}
+
+.filled {
+  text-decoration: underline;
 }

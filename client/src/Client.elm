@@ -60,35 +60,39 @@ view model = case model of
         ]
     Connecting -> [Html.h1 [] [Html.text "Connecting to room..."]]
     Game game ->
-        [ Html.h1 [] [Html.text "Players"]
-        , Html.ul [] <| List.map
-            (\o -> Html.li [] [viewPlayer o])
-            (game.view.me :: game.view.players)
-        , Html.h1 [] [Html.text "You"]
-        , Html.form
-            [ Html.Attributes.action ""
-            , Html.Events.onSubmit SubmitMyName
-            ]
-            [ Html.input
-                [ Html.Attributes.value game.changeMyName
-                , Html.Events.onInput ChangeMyName
+        [ Html.div [Html.Attributes.class "players"]
+            [ Html.h1 [] [Html.text "Players"]
+            , Html.ul [] <| List.map
+                (\o -> Html.li [] [viewPlayer o])
+                (game.view.me :: game.view.players)
+            , Html.form
+                [ Html.Attributes.action ""
+                , Html.Events.onSubmit SubmitMyName
                 ]
-                []
-            , Html.button
-                [ Html.Attributes.type_ "submit"
-                , Html.Attributes.disabled <|
-                    game.view.me.name == game.changeMyName ||
-                    String.length game.changeMyName > 32
+                [ Html.input
+                    [ Html.Attributes.value game.changeMyName
+                    , Html.Events.onInput ChangeMyName
+                    ]
+                    []
+                , Html.button
+                    [ Html.Attributes.type_ "submit"
+                    , Html.Attributes.disabled <|
+                        game.view.me.name == game.changeMyName ||
+                        String.length game.changeMyName > 32
+                    ]
+                    [Html.text "Change name"]
                 ]
-                [Html.text "Update name"]
             ]
-        , Html.h1 [] [Html.text "Table"]
-        , viewTable game
-        , Html.h1 [] [Html.text "Your cards"]
-        ] ++
-        (List.map
-            (\c -> whiteCard game.cards c (cardIsSelected game c))
-            game.view.hand)
+        , Html.div [Html.Attributes.class "main"] <|
+            [ Html.h1 [] [Html.text "Table"]
+            , viewTable game
+            , Html.h1 [] [Html.text "Your cards"]
+            ]
+            ++
+            (List.map
+                (\c -> whiteCard game.cards c (cardIsSelected game c))
+                game.view.hand)
+        ]
 
 tableBlackCard : GameState -> Maybe BlackCard
 tableBlackCard game = case game.view.table of
@@ -189,12 +193,11 @@ blackCard attrs cards black whites =
             case blackParts of
                 "" :: _ -> capitalizeFirst
                 _ -> identity
-        blank txt = Html.span
-            [Html.Attributes.class "blank"]
-            [Html.text txt] in
+        filled txt = Html.span [Html.Attributes.class "filled"] [Html.text txt]
+        blank = Html.span [Html.Attributes.class "blank"] [] in
     Html.div
         (List.map Html.Attributes.class ["card", "black"] ++ attrs) <|
-    intersperseWith (List.map blank whiteParts) (blank "") <|
+    intersperseWith (List.map filled whiteParts) blank <|
     List.map Html.text blackParts
 
 whiteCardContent : Cards -> WhiteCard -> String
