@@ -48,20 +48,20 @@ type Model
 viewPlayers : List Messages.PlayerView -> Html msg
 viewPlayers players = Html.table [] <|
     Html.tr []
-        [ Html.th
+        [ Html.th [] []
+        , Html.th [] []
+        , Html.th
             [Html.Attributes.style "width" "100%"]
             [Html.text "Name"]
         , Html.th [] [Html.text "Score"]
         ] ::
     List.map (\player -> Html.tr []
-        [ Html.td [] [Html.text player.name]
+        [ Html.td [] [Html.text <| if player.admin then " 👑" else ""]
+        , Html.td [] [Html.text <| if player.ready then " ✅" else " ⌛"]
+        , Html.td [] [Html.text player.name]
         , Html.td
             [Html.Attributes.style "text-align" "right"]
             [Html.text <| String.fromInt player.points]
-        , Html.td []
-            (if player.admin then [Html.text " 👑"] else [])
-        , Html.td []
-            (if player.ready then [Html.text " ✅"] else [])
         ])
         (List.sortBy (\player -> (-player.points, player.name)) players)
 

@@ -8,6 +8,10 @@ Scheme
 Racket
 C
 C++
+abstract nonsense
+mutability
+type theory
+pointers
 
 # Cards taken from
 # https://github.com/CardsAgainstCryptography/CAC/blob/master/src/white.txt
