@@ -49,7 +49,8 @@ viewPlayer player = Html.div [] <|
     [ Html.text player.name
     ] ++
     (if player.admin then [Html.text " 👑"] else []) ++
-    (if player.ready then [Html.text " ✅"] else [])
+    (if player.ready then [Html.text " ✅"] else []) ++
+    [Html.text <| " (" ++ String.fromInt player.points ++ " points)"]
 
 view : Model -> List (Html Msg)
 view model = case model of
@@ -62,7 +63,7 @@ view model = case model of
         [ Html.h1 [] [Html.text "Players"]
         , Html.ul [] <| List.map
             (\o -> Html.li [] [viewPlayer o])
-            game.view.players
+            (game.view.me :: game.view.players)
         , Html.h1 [] [Html.text "You"]
         , Html.form
             [ Html.Attributes.action ""
