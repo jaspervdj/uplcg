@@ -97,8 +97,14 @@ getOrCreateRoom server roomId = MVar.modifyMVar (serverRooms server) $ \rooms ->
         Just room -> pure (rooms, room)
         Nothing   -> do
             gen <- newStdGen
+            warning $ "[" <> T.unpack roomId <> "] Created room"
             room <- atomically $ newRoom server gen
             pure (HMS.insert roomId room rooms, room)
+
+deleteRoom :: Server -> RoomId -> IO ()
+deleteRoom server roomId = do
+    warning $ "[" <> T.unpack roomId <> "] Deleting room"
+    MVar.modifyMVar_ (serverRooms server) $ pure . HMS.delete roomId
 
 joinRoom :: Room -> Sink -> STM PlayerId
 joinRoom room sink = do
@@ -106,10 +112,12 @@ joinRoom room sink = do
     STM.modifyTVar' (roomSinks room) $ HMS.insert pid sink
     pure pid
 
-leaveRoom :: Room -> PlayerId -> STM ()
+leaveRoom :: Room -> PlayerId -> STM Bool
 leaveRoom room pid = do
     STM.modifyTVar' (roomGame room) $ leaveGame pid
-    STM.modifyTVar' (roomSinks room) $ HMS.delete pid
+    STM.stateTVar (roomSinks room) $ \sinks ->
+        let sinks' = HMS.delete pid sinks in
+        (HMS.null sinks', sinks')
 
 syncRoom :: Room -> IO ()
 syncRoom room = do
@@ -131,8 +139,8 @@ wsApp server pc = case routePendingConnection pc of
         WS.withPingThread conn 30 (pure ()) $ bracket
             (atomically $ joinRoom room sink)
             (\playerId -> do
-                atomically $ leaveRoom room playerId
-                syncRoom room)
+                roomEmpty <- atomically $ leaveRoom room playerId
+                if roomEmpty then deleteRoom server roomId else syncRoom room)
             (\playerId -> do
                 syncRoom room
                 cards <- fmap (^. gameCards) . atomically . STM.readTVar $
