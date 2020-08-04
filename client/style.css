@@ -1,9 +1,46 @@
 html {
   font-size: 18px;
+  font-family: sans-serif;
+  text-align: center;
 }
 
-body {
-  display: flex;
+h1 {
+  font-weight: lighter;
+  text-transform: uppercase;
+  font-size: 24px;
+  border-bottom: 1px solid black;
+}
+
+@media screen and (min-width: 800px) {
+  .players {
+    position: absolute;
+    top: 0px;
+    left: 18px;
+    width: 250px;
+  }
+
+  .main {
+    position: absolute;
+    top: 0px;
+    left: 280px;
+  }
+}
+
+.table {
+  margin-bottom: 60px;
+}
+
+table {
+  text-align: left;
+}
+
+.change-name {
+  margin-top: 18px;
+}
+
+button, input {
+  display: block;
+  margin: 12px auto 12px auto;
 }
 
 .card {
@@ -12,13 +49,17 @@ body {
   margin: 18px;
   padding: 18px;
   width: 300px;
+  border: 2px solid black;
   vertical-align: text-top;
+  max-width: calc(100% - 76px);
+  filter: drop-shadow(3px 3px 3px black);
 }
 
 .black {
   color: white;
   background: black;
-  width: 600px;
+  width: inherit;
+  margin: 12px auto 12px auto;
 }
 
 .votable {
@@ -41,7 +82,6 @@ body {
 .white {
   color: black;
   background: white;
-  border: 2px solid black;
   cursor: pointer;
 }
 

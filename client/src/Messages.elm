@@ -156,28 +156,25 @@ jsonEncGameView  val =
 
 
 type ServerMessage  =
-    Welcome Int
+    Welcome String
     | SyncCards Cards
     | SyncGameView GameView
-    | Bye 
 
 jsonDecServerMessage : Json.Decode.Decoder ( ServerMessage )
 jsonDecServerMessage =
     let jsonDecDictServerMessage = Dict.fromList
-            [ ("Welcome", Json.Decode.lazy (\_ -> Json.Decode.map Welcome (Json.Decode.int)))
+            [ ("Welcome", Json.Decode.lazy (\_ -> Json.Decode.map Welcome (Json.Decode.string)))
             , ("SyncCards", Json.Decode.lazy (\_ -> Json.Decode.map SyncCards (jsonDecCards)))
             , ("SyncGameView", Json.Decode.lazy (\_ -> Json.Decode.map SyncGameView (jsonDecGameView)))
-            , ("Bye", Json.Decode.lazy (\_ -> Json.Decode.succeed Bye))
             ]
     in  decodeSumObjectWithSingleField  "ServerMessage" jsonDecDictServerMessage
 
 jsonEncServerMessage : ServerMessage -> Value
 jsonEncServerMessage  val =
     let keyval v = case v of
-                    Welcome v1 -> ("Welcome", encodeValue (Json.Encode.int v1))
+                    Welcome v1 -> ("Welcome", encodeValue (Json.Encode.string v1))
                     SyncCards v1 -> ("SyncCards", encodeValue (jsonEncCards v1))
                     SyncGameView v1 -> ("SyncGameView", encodeValue (jsonEncGameView v1))
-                    Bye  -> ("Bye", encodeValue (Json.Encode.list identity []))
     in encodeSumObjectWithSingleField keyval val
 
 

@@ -32,7 +32,8 @@ type Msg
 type alias Cards = {black : Array String, white : Array String}
 
 type alias GameState =
-    { cards : Cards
+    { room : Maybe String
+    , cards : Cards
     , view : GameView
     , changeMyName : String
     , selectedWhiteCards : List WhiteCard
@@ -41,58 +42,87 @@ type alias GameState =
 
 type Model
     = Error String
-    | Connecting
+    | Connecting (Maybe String)
     | Game GameState
 
-viewPlayer : Messages.PlayerView -> Html msg
-viewPlayer player = Html.div [] <|
-    [ Html.text player.name
-    ] ++
-    (if player.admin then [Html.text " 👑"] else []) ++
-    (if player.ready then [Html.text " ✅"] else []) ++
-    [Html.text <| " (" ++ String.fromInt player.points ++ " points)"]
+viewPlayers : List Messages.PlayerView -> Html msg
+viewPlayers players = Html.table [] <|
+    Html.tr []
+        [ Html.th
+            [Html.Attributes.style "width" "100%"]
+            [Html.text "Name"]
+        , Html.th [] [Html.text "Score"]
+        ] ::
+    List.map (\player -> Html.tr []
+        [ Html.td [] [Html.text player.name]
+        , Html.td
+            [Html.Attributes.style "text-align" "right"]
+            [Html.text <| String.fromInt player.points]
+        , Html.td []
+            (if player.admin then [Html.text " 👑"] else [])
+        , Html.td []
+            (if player.ready then [Html.text " ✅"] else [])
+        ])
+        (List.sortBy (\player -> (-player.points, player.name)) players)
 
-view : Model -> List (Html Msg)
+view : Model -> Browser.Document Msg
 view model = case model of
     Error str ->
-        [ Html.h1 [] [Html.text "Error"]
-        , Html.p [] [Html.text str]
-        ]
-    Connecting -> [Html.h1 [] [Html.text "Connecting to room..."]]
+        { title = "CaFP: Error"
+        , body =
+            [ Html.h1 [] [Html.text "Error"]
+            , Html.p [] [Html.text str]
+            ]
+        }
+    Connecting roomId ->
+        { title = "CaFP: Connecting"
+        , body =
+            [ Html.h1 []
+                [ Html.text <|
+                    "Connecting to room " ++ Maybe.withDefault "??" roomId
+                ]
+            ]
+        }
     Game game ->
-        [ Html.div [Html.Attributes.class "players"]
-            [ Html.h1 [] [Html.text "Players"]
-            , Html.ul [] <| List.map
-                (\o -> Html.li [] [viewPlayer o])
-                (game.view.me :: game.view.players)
-            , Html.form
-                [ Html.Attributes.action ""
-                , Html.Events.onSubmit SubmitMyName
+        { title = case game.room of
+            Nothing -> "CaFP"
+            Just room -> "CaFP | " ++ room
+        , body =
+            [ Html.div [Html.Attributes.class "main"] <|
+                [ Html.div [Html.Attributes.class "table"]
+                    [Html.h1 [] [Html.text "Table"]
+                    , viewTable game
+                    ]
+                , Html.h1 [] [Html.text "Your cards"]
                 ]
-                [ Html.input
-                    [ Html.Attributes.value game.changeMyName
-                    , Html.Events.onInput ChangeMyName
+                ++
+                (List.map
+                    (\c -> whiteCard game.cards c (cardIsSelected game c))
+                    game.view.hand)
+            , Html.div [Html.Attributes.class "players"]
+                [ Html.h1 [] [Html.text "Players"]
+                , viewPlayers <| game.view.me :: game.view.players
+                , Html.form
+                    [ Html.Attributes.class "change-name"
+                    , Html.Attributes.action ""
+                    , Html.Events.onSubmit SubmitMyName
                     ]
-                    []
-                , Html.button
-                    [ Html.Attributes.type_ "submit"
-                    , Html.Attributes.disabled <|
-                        game.view.me.name == game.changeMyName ||
-                        String.length game.changeMyName > 32
+                    [ Html.input
+                        [ Html.Attributes.value game.changeMyName
+                        , Html.Events.onInput ChangeMyName
+                        ]
+                        []
+                    , Html.button
+                        [ Html.Attributes.type_ "submit"
+                        , Html.Attributes.disabled <|
+                            game.view.me.name == game.changeMyName ||
+                            String.length game.changeMyName > 32
+                        ]
+                        [Html.text "Change my name"]
                     ]
-                    [Html.text "Change name"]
                 ]
             ]
-        , Html.div [Html.Attributes.class "main"] <|
-            [ Html.h1 [] [Html.text "Table"]
-            , viewTable game
-            , Html.h1 [] [Html.text "Your cards"]
-            ]
-            ++
-            (List.map
-                (\c -> whiteCard game.cards c (cardIsSelected game c))
-                game.view.hand)
-        ]
+        }
 
 tableBlackCard : GameState -> Maybe BlackCard
 tableBlackCard game = case game.view.table of
@@ -111,7 +141,14 @@ cardIsSelected game card = List.member card <| selectedWhiteCards game
 viewTable : GameState -> Html Msg
 viewTable game = case game.view.table of
     Messages.Proposing c my -> Html.div [] <|
-        [ blackCard [] game.cards c <| selectedWhiteCards game
+        [ Html.p []
+            [ Html.text <| "Select " ++
+                String.fromInt (blackCardBlanks game.cards c) ++
+                " card" ++
+                (if blackCardBlanks game.cards c < 2 then "" else "s") ++
+                " from your hand"
+            ]
+        , blackCard [] game.cards c <| selectedWhiteCards game
         , Html.button
             [ Html.Attributes.disabled <|
                 List.length my > 0 ||
@@ -122,8 +159,7 @@ viewTable game = case game.view.table of
             [Html.text "Propose"]
         ]
     Messages.Voting black proposals myProposal myVote -> Html.div [] <|
-        [ Html.h2 [] [Html.text "Opponent proposals"]
-        ] ++
+        [Html.p [] [Html.text <| "Vote for the funniest combination"]] ++
         List.indexedMap (\i proposal ->
             let attrs =
                     if Just i == myProposal then
@@ -148,7 +184,7 @@ viewTable game = case game.view.table of
         ]
 
     Messages.Tally black results -> Html.div [] <|
-        [Html.h2 [] [Html.text "Vote results"]] ++
+        [Html.p [] [Html.text "Vote results"]] ++
         List.map (\voted ->
             let attrs =
                     if List.length voted.winners > 0 then
@@ -227,14 +263,18 @@ update msg model = case msg of
     WebSocketIn json ->
         case Json.Decode.decodeString Messages.jsonDecServerMessage json of
             Err str -> (Error <| Json.Decode.errorToString str, Cmd.none)
-            Ok (Messages.Welcome playerId) -> (model, Cmd.none)
-            Ok Messages.Bye -> (model, Cmd.none)
+            Ok (Messages.Welcome roomId) -> case model of
+                Connecting _ -> (Connecting (Just roomId), Cmd.none)
+                _ -> (model, Cmd.none)
             Ok (Messages.SyncGameView gameView) ->
                 case model of
                     Game game -> (Game {game | view = gameView}, Cmd.none)
                     _ ->
                         ( Game
-                            { cards = {black = Array.empty, white = Array.empty}
+                            { room = case model of
+                                Connecting roomId -> roomId
+                                _ -> Nothing
+                            , cards = {black = Array.empty, white = Array.empty}
                             , view = gameView
                             , changeMyName = gameView.me.name
                             , selectedWhiteCards = []
@@ -298,10 +338,10 @@ update msg model = case msg of
 
 main : Program () Model Msg
 main = Browser.application
-    { init = \() url key -> (Connecting, Cmd.none)
+    { init = \() url key -> (Connecting Nothing, Cmd.none)
     , update = update
     , subscriptions = subscriptions
-    , view = \model -> {title = "Client", body = view model}
+    , view = \model -> view model
     , onUrlChange = \url -> Ignore
     , onUrlRequest = \urlRequest -> Ignore
     }

@@ -142,6 +142,7 @@ wsApp server pc = case routePendingConnection pc of
                 roomEmpty <- atomically $ leaveRoom room playerId
                 if roomEmpty then deleteRoom server roomId else syncRoom room)
             (\playerId -> do
+                sink . Aeson.encode $ Welcome roomId
                 syncRoom room
                 cards <- fmap (^. gameCards) . atomically . STM.readTVar $
                     roomGame room

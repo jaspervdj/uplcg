@@ -62,10 +62,9 @@ data GameView = GameView
     } deriving (Show)
 
 data ServerMessage
-    = Welcome !Int
+    = Welcome !Text
     | SyncCards !Cards
     | SyncGameView !GameView
-    | Bye
     deriving (Show)
 
 data ClientMessage
