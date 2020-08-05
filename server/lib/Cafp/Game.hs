@@ -21,9 +21,9 @@ module Cafp.Game
 
 import           Cafp.Messages
 import           Control.Lens                 (Lens', at, iall, ifor_, imap, ix,
-                                               orOf, over, to, (%%=), (%=),
-                                               (%~), (&), (+=), (.=), (.~),
-                                               (^.), (^..), (^?), _1, _2, _3)
+                                               orOf, to, (%%=), (%=), (%~), (&),
+                                               (+=), (.=), (.~), (^.), (^..),
+                                               (^?), _1, _2, _3)
 import           Control.Lens.TH              (makeLenses, makePrisms)
 import           Control.Monad                (guard)
 import           Control.Monad.State          (State, execState, modify,
@@ -60,7 +60,8 @@ data Table
     deriving (Show)
 
 data Player = Player
-    { _playerName   :: !Text
+    { _playerId     :: !PlayerId
+    , _playerName   :: !Text
     , _playerHand   :: !(V.Vector WhiteCard)
     , _playerAdmin  :: !Bool
     , _playerPoints :: !Int
@@ -134,17 +135,23 @@ assignAdmin game
     -- No players
     | otherwise = game
 
-joinGame :: Game -> (PlayerId, Game)
-joinGame = runState $ do
-    pid <- gameNextPlayerId %%= (\x -> (x, x + 1))
-    let name = "Player " <> T.pack (show pid)
-    hand <- V.replicateM defaultHandSize popWhiteCard
-    gamePlayers %= HMS.insert pid (Player name hand False 0)
+joinGame :: Maybe Player -> Game -> (PlayerId, Game)
+joinGame mbPlayer = runState $ do
+    player <- case mbPlayer of
+        Nothing -> do
+            pid <- gameNextPlayerId %%= (\x -> (x, x + 1))
+            let name = "Player " <> T.pack (show pid)
+            hand <- V.replicateM defaultHandSize popWhiteCard
+            pure $ Player pid name hand False 0
+        Just p -> pure $ p & playerAdmin .~ False
+    gamePlayers %= HMS.insert (player ^. playerId) player
     modify assignAdmin
-    pure pid
+    pure $ player ^. playerId
 
-leaveGame :: PlayerId -> Game -> Game
-leaveGame pid = assignAdmin . over gamePlayers (HMS.delete pid)
+leaveGame :: PlayerId -> Game -> (Maybe Player, Game)
+leaveGame pid game = case game ^? gamePlayers . ix pid of
+    Nothing -> (Nothing, game)
+    Just p  -> (Just p, assignAdmin $ game & gamePlayers %~ HMS.delete pid)
 
 blackCardBlanks :: Cards -> BlackCard -> Int
 blackCardBlanks cards (BlackCard c) =

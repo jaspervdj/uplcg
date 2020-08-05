@@ -11,24 +11,40 @@
     <script type="text/JavaScript" src="$CAFP_BASE/assets/client.js"></script>
     <script>
       var app = Elm.Client.init({node: document.querySelector("main")});
-      var protocol = "ws:";
-      if(document.location.protocol == "https:") {
+
+      function connect() {
+        var protocol = "ws:";
+        if(document.location.protocol == "https:") {
           protocol = "wss:"
-      }
-      var path = document.location.pathname;
-      if(path.startsWith("$CAFP_BASE")) {
+        }
+        var path = document.location.pathname;
+        if(path.startsWith("$CAFP_BASE")) {
           path = path.substr("$CAFP_BASE".length);
+        }
+        var roomId = path.split("/")[2];
+        var url = protocol + "//" + document.location.host +
+          "$CAFP_BASE/rooms/" + roomId + "/events";
+
+        var socket = new WebSocket(url);
+        var socketSend = function(message) {
+          socket.send(message);
+        };
+        app.ports.webSocketOut.subscribe(socketSend);
+        socket.onmessage = function(event) {
+          app.ports.webSocketIn.send(event.data);
+        };
+        socket.onclose = function(event) {
+          app.ports.webSocketOut.unsubscribe(socketSend);
+          setTimeout(function() {
+            connect();
+          }, 1000);
+        };
+        socket.onerror = function(event) {
+          socket.close();
+        };
       }
-      var roomId = path.split("/")[2];
-      var url = protocol + "//" + document.location.host +
-        "$CAFP_BASE/rooms/" + roomId + "/events";
-      var socket = new WebSocket(url);
-      app.ports.webSocketOut.subscribe(function(message) {
-        socket.send(message);
-      });
-      socket.addEventListener("message", function(event) {
-        app.ports.webSocketIn.send(event.data);
-      });
+
+      connect();
     </script>
   </body>
 </html>
