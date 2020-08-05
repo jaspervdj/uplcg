@@ -99,3 +99,7 @@ button, input {
 .filled {
   text-decoration: underline;
 }
+
+.authors {
+  margin-top: 6px;
+}

@@ -45,6 +45,10 @@ type Model
     | Connecting (Maybe String)
     | Game GameState
 
+pluralize : Int -> String -> String -> String
+pluralize x singular plural =
+    String.fromInt x ++ " " ++ if x < 2 then singular else plural
+
 viewPlayers : List Messages.PlayerView -> Html msg
 viewPlayers players = Html.table [] <|
     Html.tr []
@@ -143,9 +147,7 @@ viewTable game = case game.view.table of
     Messages.Proposing c my -> Html.div [] <|
         [ Html.p []
             [ Html.text <| "Select " ++
-                String.fromInt (blackCardBlanks game.cards c) ++
-                " card" ++
-                (if blackCardBlanks game.cards c < 2 then "" else "s") ++
+                pluralize (blackCardBlanks game.cards c) "card" "cards" ++
                 " from your hand"
             ]
         , blackCard [] game.cards c <| selectedWhiteCards game
@@ -186,12 +188,18 @@ viewTable game = case game.view.table of
     Messages.Tally black results -> Html.div [] <|
         [Html.p [] [Html.text "Vote results"]] ++
         List.map (\voted ->
-            let attrs =
-                    if List.length voted.winners > 0 then
-                        [Html.Attributes.class "winner"]
-                    else
-                        [] in
-            blackCard attrs game.cards black voted.proposal)
+            if List.length voted.winners <= 0 then
+                blackCard [] game.cards black voted.proposal
+            else
+                Html.div [] <|
+                [ blackCard [Html.Attributes.class "winner"]
+                    game.cards black voted.proposal
+                , Html.p [Html.Attributes.class "authors"]
+                    [ Html.text <|
+                        String.join ", " voted.winners ++ " wins with " ++
+                        pluralize voted.score "vote" "votes"
+                    ]
+                ])
             results ++
         if not game.view.me.admin then
             []
