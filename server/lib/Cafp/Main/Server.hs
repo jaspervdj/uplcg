@@ -31,12 +31,9 @@ import qualified Network.Wai.Handler.Warp       as Warp
 import qualified Network.Wai.Handler.WebSockets as WaiWs
 import qualified Network.WebSockets             as WS
 import           System.Environment             (getEnv)
-import qualified System.IO                      as IO
+import qualified System.Log.FastLogger          as FL
 import           System.Random                  (StdGen, newStdGen)
 import qualified Web.Scotty                     as Scotty
-
-info :: String -> IO ()
-info = IO.hPutStrLn IO.stderr
 
 type RoomId = T.Text
 
@@ -48,7 +45,8 @@ data Room = Room
     }
 
 data Server = Server
-    { serverCookieSocket :: CookieSocket.Handle Player
+    { serverLogger       :: FL.FastLogger
+    , serverCookieSocket :: CookieSocket.Handle Player
     , serverCards        :: Cards
     , serverRooms        :: MVar (HMS.HashMap RoomId Room)
     }
@@ -61,9 +59,9 @@ readCards = Cards
     parseCards  = V.fromList . filter (not . T.null) . map dropComment . T.lines
     dropComment = T.strip . fst . T.break (== '#')
 
-withServer :: (Server -> IO a) -> IO a
-withServer f = CookieSocket.withHandle 5 $ \cs ->
-    f =<< Server cs <$> readCards <*> MVar.newMVar HMS.empty
+withServer :: FL.FastLogger -> (Server -> IO a) -> IO a
+withServer fl f = CookieSocket.withHandle 5 $ \cs -> do
+    f =<< Server fl cs <$> readCards <*> MVar.newMVar HMS.empty
 
 newRoom :: Server -> StdGen -> STM Room
 newRoom server gen = Room
@@ -105,13 +103,13 @@ getOrCreateRoom server roomId = MVar.modifyMVar (serverRooms server) $ \rooms ->
         Just room -> pure (rooms, room)
         Nothing   -> do
             gen <- newStdGen
-            info $ "[" <> T.unpack roomId <> "] Created room"
+            serverLogger server $ "[" <> FL.toLogStr roomId <> "] Created room"
             room <- atomically $ newRoom server gen
             pure (HMS.insert roomId room rooms, room)
 
 deleteRoom :: Server -> RoomId -> IO ()
 deleteRoom server roomId = do
-    info $ "[" <> T.unpack roomId <> "] Deleting room"
+    serverLogger server $ "[" <> FL.toLogStr roomId <> "] Deleting room"
     MVar.modifyMVar_ (serverRooms server) $ pure . HMS.delete roomId
 
 joinRoom :: Room -> Sink -> Maybe Player -> STM PlayerId
@@ -147,13 +145,14 @@ wsApp server pc = case routePendingConnection pc of
         WS.withPingThread conn 30 (pure ()) $ bracket
             (do
                 pid <- atomically $ joinRoom room sink mbRecovered
-                info $ "[" <> T.unpack roomId <> "] Player " <> show pid <>
+                serverLogger server $ "[" <> FL.toLogStr roomId <>
+                    "] Player " <> FL.toLogStr pid <>
                     if isNothing mbRecovered then " joined" else " rejoined"
                 pure pid)
             (\pid -> do
                 (roomEmpty, mbPlayer) <- atomically $ leaveRoom room pid
-                info $ "[" <> T.unpack roomId <>
-                    "] Player " <> show pid <> " left"
+                serverLogger server $ "[" <> FL.toLogStr roomId <>
+                    "] Player " <> FL.toLogStr pid <> " left"
                 if roomEmpty
                     then deleteRoom server roomId
                     else do
@@ -177,7 +176,8 @@ wsApp server pc = case routePendingConnection pc of
                     processClientMessage playerId cm
                 syncRoom room
             Nothing -> do
-                info $ "Could not decode client message: " ++ show msg
+                serverLogger server $ "Could not decode client message: " <>
+                    FL.toLogStr (show msg)
 
 splitPath :: T.Text -> [T.Text]
 splitPath = filter (not . T.null) . T.split (== '/')
@@ -200,7 +200,11 @@ main = do
     port <- read <$> getEnv "CAFP_PORT"
     base <- splitPath . T.pack <$> getEnv "CAFP_BASE"
     let settings = Warp.setPort port . Warp.setHost host $ Warp.defaultSettings
-    withServer $ \server -> do
+    timeCache <- FL.newTimeCache FL.simpleTimeFormat
+    FL.withTimedFastLogger timeCache
+            (FL.LogStderr FL.defaultBufSize) $ \tfl ->
+        let fl s = tfl (\time -> FL.toLogStr time <> " " <> s <> "\n") in
+        withServer fl $ \server -> do
         sapp <- scottyApp
         Warp.runSettings settings $ baseUrl base $
             WaiWs.websocketsOr WS.defaultConnectionOptions (wsApp server) sapp
