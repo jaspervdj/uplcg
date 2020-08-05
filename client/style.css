@@ -22,7 +22,8 @@ h1 {
   .main {
     position: absolute;
     top: 0px;
-    left: 280px;
+    left: 286px;
+    right: 18px;
   }
 }
 
