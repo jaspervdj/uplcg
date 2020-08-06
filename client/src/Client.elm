@@ -23,11 +23,13 @@ type Msg
     -- Card selection
     | SelectWhiteCard WhiteCard
     | ProposeWhiteCards
+    | AdminSkipProposals
     -- Voting
     | SelectVote Int
     | SubmitVote
+    | AdminSkipVotes
     -- Tally
-    | ConfirmTally
+    | AdminConfirmTally
 
 type alias Cards = {black : Array String, white : Array String}
 
@@ -159,7 +161,12 @@ viewTable game = case game.view.table of
             , Html.Events.onClick ProposeWhiteCards
             ]
             [Html.text "Propose"]
-        ]
+        ] ++
+        ifAdmin game.view
+            [ Html.button
+                [Html.Events.onClick AdminSkipProposals]
+                [Html.text "Skip remaining players"]
+            ]
     Messages.Voting black proposals myProposal myVote -> Html.div [] <|
         [Html.p [] [Html.text <| "Vote for the funniest combination"]] ++
         List.indexedMap (\i proposal ->
@@ -183,7 +190,12 @@ viewTable game = case game.view.table of
             , Html.Events.onClick SubmitVote
             ]
             [Html.text "Vote"]
-        ]
+        ] ++
+        ifAdmin game.view
+            [ Html.button
+                [Html.Events.onClick AdminSkipVotes]
+                [Html.text "Skip remaining players"]
+            ]
 
     Messages.Tally black results -> Html.div [] <|
         [Html.p [] [Html.text "Vote results"]] ++
@@ -201,12 +213,14 @@ viewTable game = case game.view.table of
                     ]
                 ])
             results ++
-        if not game.view.me.admin then
-            []
-        else
+        ifAdmin game.view
             [ Html.button
-                [Html.Events.onClick ConfirmTally] [Html.text "Next round"]
+                [Html.Events.onClick AdminConfirmTally]
+                [Html.text "Next round"]
             ]
+
+ifAdmin : GameView -> List (Html a) -> List (Html a)
+ifAdmin gameView html = if gameView.me.admin then html else []
 
 intersperseWith : List a -> a -> List a -> List a
 intersperseWith values def list = case list of
@@ -326,12 +340,16 @@ update msg model = case msg of
             )
         _ -> (model, Cmd.none)
 
+    AdminSkipProposals -> (model, send Messages.AdminSkipProposals)
+
     SelectVote i -> case model of
         Game game -> case game.view.table of
             Messages.Voting _ _ _ Nothing ->
                 (Game {game | selectedVote = Just i}, Cmd.none)
             _ -> (model, Cmd.none)
         _ -> (model, Cmd.none)
+
+    AdminSkipVotes -> (model, send Messages.AdminSkipVotes)
 
     SubmitVote -> case model of
         Game game -> case game.selectedVote of
@@ -342,7 +360,7 @@ update msg model = case msg of
             _ -> (model, Cmd.none)
         _ -> (model, Cmd.none)
 
-    ConfirmTally -> (model, send <| Messages.ConfirmTally)
+    AdminConfirmTally -> (model, send Messages.AdminConfirmTally)
 
 main : Program () Model Msg
 main = Browser.application

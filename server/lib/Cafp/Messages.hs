@@ -71,7 +71,9 @@ data ClientMessage
     = ChangeMyName !Text
     | ProposeWhiteCards !(Vector WhiteCard)
     | SubmitVote !Int
-    | ConfirmTally
+    | AdminSkipProposals
+    | AdminSkipVotes
+    | AdminConfirmTally
     deriving (Show)
 
 deriveBoth defaultOptions ''BlackCard

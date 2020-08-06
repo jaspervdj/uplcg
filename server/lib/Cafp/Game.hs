@@ -206,11 +206,11 @@ votedMessages cards (BlackCard black) voteds = do
             | WhiteCard i <- V.toList $ votedProposal voted
             ]
 
-stepGame :: Game -> Game
-stepGame game = case game ^. gameTable of
+stepGame :: Bool -> Game -> Game
+stepGame skip game = case game ^. gameTable of
     TableProposing black proposals
         -- Everyone has proposed.
-        | iall (\pid _ -> HMS.member pid proposals) (game ^. gamePlayers) ->
+        | skip || iall (const . (`HMS.member` proposals)) (game ^. gamePlayers) ->
             let proposalsMap = HMS.fromListWith (++) $ do
                     (pid, proposal) <- HMS.toList proposals
                     pure (proposal, [pid])
@@ -218,7 +218,7 @@ stepGame game = case game ^. gameTable of
                     (V.fromList $ HMS.toList proposalsMap) (game ^. gameSeed) in
             -- There's a recursive call because in some one-player cases we
             -- skip the voting process entirely.
-            stepGame $ game
+            stepGame False $ game
                 & gameSeed .~ seed
                 & gameTable .~ TableVoting black shuffled HMS.empty
                 & gamePlayers %~ imap (\pid player ->
@@ -228,7 +228,7 @@ stepGame game = case game ^. gameTable of
 
     TableVoting black shuffled votes
         -- Everyone has voted.
-        | iall hasVoted (game ^. gamePlayers) ->
+        | skip || iall hasVoted (game ^. gamePlayers) ->
             let (voted, wins) = tallyVotes game shuffled votes in
             flip execState game $ do
             for_ wins $ \win -> gamePlayers . ix win . playerPoints += 1
@@ -259,7 +259,7 @@ processClientMessage pid msg game = case msg of
         | Just b <- game ^? gameTable . _TableProposing . _1
         , blackCardBlanks (game ^. gameCards) b /= length cs -> game
         -- All good.
-        | otherwise -> stepGame $
+        | otherwise -> stepGame False $
             game & gameTable . _TableProposing . _2 . at pid .~ Just cs
 
     SubmitVote i -> case game ^. gameTable of
@@ -273,19 +273,29 @@ processClientMessage pid msg game = case msg of
             -- Can't vote for self.
             | pid `elem` snd (shuffled V.! i) -> game
             -- Ok vote.
-            | otherwise -> stepGame $ game
+            | otherwise -> stepGame False $ game
                 & gameTable . _TableVoting . _3 . at pid .~ Just i
 
-    ConfirmTally
-        | TableTally _ _ <- game ^. gameTable
-        , Just True <- game ^? gamePlayers . ix pid . playerAdmin ->
+    AdminConfirmTally
+        | TableTally _ _ <- game ^. gameTable, admin ->
             flip execState game $ do
             black <- popBlackCard
             gameTable .= TableProposing black HMS.empty
             modify drawNewWhiteCards
         | otherwise -> game
+
+    AdminSkipProposals
+        | TableProposing _ _ <- game ^. gameTable, admin -> stepGame True $
+            game & gameLog %~ ("Admin skipped proposals" :)
+        | otherwise -> game
+
+    AdminSkipVotes
+        | TableVoting _ _ _ <- game ^. gameTable, admin -> stepGame True $
+            game & gameLog %~ ("Admin skipped votes" :)
+        | otherwise -> game
   where
-    hand = game ^.. gamePlayers . ix pid . playerHand . traverse
+    hand  = game ^.. gamePlayers . ix pid . playerHand . traverse
+    admin = fromMaybe False $ game ^? gamePlayers . ix pid . playerAdmin
 
 gameViewForPlayer :: PlayerId -> Game -> GameView
 gameViewForPlayer self game =

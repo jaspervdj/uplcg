@@ -183,7 +183,9 @@ type ClientMessage  =
     ChangeMyName String
     | ProposeWhiteCards (List WhiteCard)
     | SubmitVote Int
-    | ConfirmTally 
+    | AdminSkipProposals 
+    | AdminSkipVotes 
+    | AdminConfirmTally 
 
 jsonDecClientMessage : Json.Decode.Decoder ( ClientMessage )
 jsonDecClientMessage =
@@ -191,7 +193,9 @@ jsonDecClientMessage =
             [ ("ChangeMyName", Json.Decode.lazy (\_ -> Json.Decode.map ChangeMyName (Json.Decode.string)))
             , ("ProposeWhiteCards", Json.Decode.lazy (\_ -> Json.Decode.map ProposeWhiteCards (Json.Decode.list (jsonDecWhiteCard))))
             , ("SubmitVote", Json.Decode.lazy (\_ -> Json.Decode.map SubmitVote (Json.Decode.int)))
-            , ("ConfirmTally", Json.Decode.lazy (\_ -> Json.Decode.succeed ConfirmTally))
+            , ("AdminSkipProposals", Json.Decode.lazy (\_ -> Json.Decode.succeed AdminSkipProposals))
+            , ("AdminSkipVotes", Json.Decode.lazy (\_ -> Json.Decode.succeed AdminSkipVotes))
+            , ("AdminConfirmTally", Json.Decode.lazy (\_ -> Json.Decode.succeed AdminConfirmTally))
             ]
     in  decodeSumObjectWithSingleField  "ClientMessage" jsonDecDictClientMessage
 
@@ -201,7 +205,9 @@ jsonEncClientMessage  val =
                     ChangeMyName v1 -> ("ChangeMyName", encodeValue (Json.Encode.string v1))
                     ProposeWhiteCards v1 -> ("ProposeWhiteCards", encodeValue ((Json.Encode.list jsonEncWhiteCard) v1))
                     SubmitVote v1 -> ("SubmitVote", encodeValue (Json.Encode.int v1))
-                    ConfirmTally  -> ("ConfirmTally", encodeValue (Json.Encode.list identity []))
+                    AdminSkipProposals  -> ("AdminSkipProposals", encodeValue (Json.Encode.list identity []))
+                    AdminSkipVotes  -> ("AdminSkipVotes", encodeValue (Json.Encode.list identity []))
+                    AdminConfirmTally  -> ("AdminConfirmTally", encodeValue (Json.Encode.list identity []))
     in encodeSumObjectWithSingleField keyval val
 
 
