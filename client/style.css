@@ -39,7 +39,7 @@ h1::after {
   }
 }
 
-.players .table {
+.players table {
   color: black;
 }
 
@@ -69,7 +69,7 @@ button, input {
   border: 2px solid black;
   vertical-align: text-top;
   max-width: calc(100% - 76px);
-  filter: drop-shadow(3px 3px 3px black);
+  filter: drop-shadow(3px 3px 3px rgba(0, 0, 0, 0.5));
 }
 
 .black {
