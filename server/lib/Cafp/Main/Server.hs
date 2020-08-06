@@ -11,7 +11,7 @@ import qualified Control.Concurrent.MVar        as MVar
 import           Control.Concurrent.STM         (STM, TVar, atomically)
 import qualified Control.Concurrent.STM         as STM
 import           Control.Exception              (bracket)
-import           Control.Lens                   ((^.))
+import           Control.Lens                   ((^.), (&), (.~))
 import           Control.Monad                  (forever, when)
 import qualified Data.Aeson                     as Aeson
 import qualified Data.ByteString                as B
@@ -40,7 +40,8 @@ type RoomId = T.Text
 type Sink = BL.ByteString -> IO ()
 
 data Room = Room
-    { roomGame  :: TVar Game
+    { roomId    :: RoomId
+    , roomGame  :: TVar Game
     , roomSinks :: TVar (HMS.HashMap PlayerId Sink)
     }
 
@@ -63,9 +64,9 @@ withServer :: FL.FastLogger -> (Server -> IO a) -> IO a
 withServer fl f = CookieSocket.withHandle 5 $ \cs -> do
     f =<< Server fl cs <$> readCards <*> MVar.newMVar HMS.empty
 
-newRoom :: Server -> StdGen -> STM Room
-newRoom server gen = Room
-    <$> (STM.newTVar $ newGame (serverCards server) gen)
+newRoom :: RoomId -> Cards -> StdGen -> STM Room
+newRoom rid cards gen = Room rid
+    <$> STM.newTVar (newGame cards gen)
     <*> STM.newTVar HMS.empty
 
 parseRoomId :: T.Text -> Either String T.Text
@@ -76,8 +77,8 @@ parseRoomId txt
 scottyApp :: IO Wai.Application
 scottyApp = Scotty.scottyApp $ do
     Scotty.get "/rooms/:id/" $ do
-        roomId <- Scotty.param "id"
-        when (T.length roomId < 6) $
+        rid <- Scotty.param "id"
+        when (T.length rid < 6) $
             Scotty.raise "Room ID should be at least 6 characters"
         Scotty.setHeader "Content-Type" "text/html"
         Scotty.file "assets/client.html"
@@ -98,19 +99,19 @@ routePendingConnection pending =
         _                                                     -> Nothing
 
 getOrCreateRoom :: Server -> RoomId -> IO Room
-getOrCreateRoom server roomId = MVar.modifyMVar (serverRooms server) $ \rooms ->
-    case HMS.lookup roomId rooms of
+getOrCreateRoom server rid = MVar.modifyMVar (serverRooms server) $ \rooms ->
+    case HMS.lookup rid rooms of
         Just room -> pure (rooms, room)
         Nothing   -> do
             gen <- newStdGen
-            serverLogger server $ "[" <> FL.toLogStr roomId <> "] Created room"
-            room <- atomically $ newRoom server gen
-            pure (HMS.insert roomId room rooms, room)
+            serverLogger server $ "[" <> FL.toLogStr rid <> "] Created room"
+            room <- atomically $ newRoom rid (serverCards server) gen
+            pure (HMS.insert rid room rooms, room)
 
 deleteRoom :: Server -> RoomId -> IO ()
-deleteRoom server roomId = do
-    serverLogger server $ "[" <> FL.toLogStr roomId <> "] Deleting room"
-    MVar.modifyMVar_ (serverRooms server) $ pure . HMS.delete roomId
+deleteRoom server rid = do
+    serverLogger server $ "[" <> FL.toLogStr rid <> "] Deleting room"
+    MVar.modifyMVar_ (serverRooms server) $ pure . HMS.delete rid
 
 joinRoom :: Room -> Sink -> Maybe Player -> STM PlayerId
 joinRoom room sink mbRecovered = do
@@ -125,11 +126,14 @@ leaveRoom room pid = do
         let sinks' = HMS.delete pid sinks in
         ((HMS.null sinks', player), sinks')
 
-syncRoom :: Room -> IO ()
-syncRoom room = do
+syncRoom :: Server -> Room -> IO ()
+syncRoom server room = do
     (game, sinks) <- atomically $ (,)
-        <$> STM.readTVar (roomGame room)
+        <$> STM.stateTVar (roomGame room) (\g -> (g, g & gameLog .~ []))
         <*> STM.readTVar (roomSinks room)
+    for_ (reverse $ game ^. gameLog) $ \msg ->
+        serverLogger server $ "[" <> FL.toLogStr (roomId room) <> "] " <>
+        FL.toLogStr msg
     for_ (HMS.toList sinks) $ \(pid, sink) -> do
         let view = gameViewForPlayer pid game
         sink . Aeson.encode $ SyncGameView view
@@ -137,44 +141,44 @@ syncRoom room = do
 wsApp :: Server -> WS.ServerApp
 wsApp server pc = case routePendingConnection pc of
     Nothing -> WS.rejectRequest pc "Invalid URL"
-    Just roomId -> do
-        room <- getOrCreateRoom server roomId
+    Just rid -> do
+        room <- getOrCreateRoom server rid
         (conn, secret, mbRecovered) <-
-            CookieSocket.acceptRequest (serverCookieSocket server) roomId pc
+            CookieSocket.acceptRequest (serverCookieSocket server) rid pc
         let sink = WS.sendTextData conn
         WS.withPingThread conn 30 (pure ()) $ bracket
             (do
                 pid <- atomically $ joinRoom room sink mbRecovered
-                serverLogger server $ "[" <> FL.toLogStr roomId <>
+                serverLogger server $ "[" <> FL.toLogStr rid <>
                     "] Player " <> FL.toLogStr pid <>
                     if isNothing mbRecovered then " joined" else " rejoined"
                 pure pid)
             (\pid -> do
                 (roomEmpty, mbPlayer) <- atomically $ leaveRoom room pid
-                serverLogger server $ "[" <> FL.toLogStr roomId <>
+                serverLogger server $ "[" <> FL.toLogStr rid <>
                     "] Player " <> FL.toLogStr pid <> " left"
                 if roomEmpty
-                    then deleteRoom server roomId
+                    then deleteRoom server rid
                     else do
                         for_ mbPlayer $ CookieSocket.persist
                             (serverCookieSocket server) secret
-                        syncRoom room)
+                        syncRoom server room)
             (\playerId -> do
-                sink . Aeson.encode $ Welcome roomId
-                syncRoom room
+                sink . Aeson.encode $ Welcome rid
+                syncRoom server room
                 cards <- fmap (^. gameCards) . atomically . STM.readTVar $
                     roomGame room
                 sink . Aeson.encode $ SyncCards cards
-                loop conn roomId playerId)
+                loop conn rid playerId)
   where
-    loop conn roomId playerId = forever $ do
+    loop conn rid playerId = forever $ do
         msg <- WS.receiveData conn
         case Aeson.decode msg of
             Just cm -> do
-                room <- getOrCreateRoom server roomId  -- TODO: only get?
+                room <- getOrCreateRoom server rid  -- TODO: only get?
                 atomically . STM.modifyTVar' (roomGame room) $
                     processClientMessage playerId cm
-                syncRoom room
+                syncRoom server room
             Nothing -> do
                 serverLogger server $ "Could not decode client message: " <>
                     FL.toLogStr (show msg)

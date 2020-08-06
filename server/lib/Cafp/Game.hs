@@ -8,7 +8,7 @@ module Cafp.Game
     , Table (..)
     , Player (..)
     , Game (..)
-    , gameCards, gamePlayers, gameNextPlayerId
+    , gameLog, gameCards, gamePlayers, gameNextPlayerId
 
     , newGame
     , joinGame
@@ -70,6 +70,7 @@ data Player = Player
 data Game = Game
     { _gameCards        :: !Cards
     , _gameSeed         :: !StdGen
+    , _gameLog          :: ![Text]
     , _gameBlack        :: ![BlackCard]
     , _gameWhite        :: ![WhiteCard]
     , _gamePlayers      :: !(HMS.HashMap PlayerId Player)
@@ -108,6 +109,7 @@ newGame cards gen = flip execState state0 $ do
     state0 = Game
         { _gameCards        = cards
         , _gameSeed         = gen
+        , _gameLog          = []
         , _gameBlack        = []
         , _gameWhite        = []
         , _gamePlayers      = HMS.empty
@@ -191,6 +193,19 @@ tallyVotes game shuffled votes =
   where
     byScore = V.modify $ V.sortBy . comparing $ Down . votedScore
 
+-- | Create nice messages about the winners in the logs.
+votedMessages :: Cards -> BlackCard -> V.Vector VotedView -> [T.Text]
+votedMessages cards (BlackCard black) voteds = do
+    voted <- V.toList voteds
+    guard $ V.length (votedWinners voted) > 0
+    pure $
+        T.intercalate ", " (V.toList $ votedWinners voted) <> " won with " <>
+        cardsBlack cards V.! black <> " | " <>
+        T.intercalate " / "
+            [ cardsWhite cards V.! i
+            | WhiteCard i <- V.toList $ votedProposal voted
+            ]
+
 stepGame :: Game -> Game
 stepGame game = case game ^. gameTable of
     TableProposing black proposals
@@ -218,6 +233,7 @@ stepGame game = case game ^. gameTable of
             flip execState game $ do
             for_ wins $ \win -> gamePlayers . ix win . playerPoints += 1
             gameTable .= TableTally black voted
+            gameLog %= (votedMessages (game ^. gameCards) black voted ++)
         | otherwise -> game
       where
         hasVoted pid _ = HMS.member pid votes ||
