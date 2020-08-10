@@ -36,6 +36,7 @@ server/assets/client.js: $(ELM_MESSAGES_SOURCE) $(ELM_SOURCES)
 	mkdir -p server/assets
 	cd client && elm make src/Client.elm --optimize --output=../$@
 
+.PHONY: server/assets/client.html  # Depends on git hash.
 server/assets/client.html: client/index.html config.mk
 	sed "s@\$$CAFP_BASE@$(CAFP_BASE)@" $< | \
 	    sed "s@\$$CAFP_VERSION@$(CAFP_VERSION)@" >$@
