@@ -37,7 +37,8 @@ server/assets/client.js: $(ELM_MESSAGES_SOURCE) $(ELM_SOURCES)
 	cd client && elm make src/Client.elm --optimize --output=../$@
 
 server/assets/client.html: client/index.html config.mk
-	sed "s@\$$CAFP_BASE@$(CAFP_BASE)@" $< >$@
+	sed "s@\$$CAFP_BASE@$(CAFP_BASE)@" $< | \
+	    sed "s@\$$CAFP_VERSION@$(CAFP_VERSION)@" >$@
 
 server/assets/style.css: client/style.css
 	cp $< $@

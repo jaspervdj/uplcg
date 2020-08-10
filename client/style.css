@@ -32,10 +32,8 @@ h1::after {
   }
 
   .main {
-    position: absolute;
-    top: 0px;
-    left: 286px;
-    right: 18px;
+    margin-left: 286px;
+    margin-right: 18px;
   }
 }
 
@@ -118,4 +116,9 @@ button, input {
 
 .authors {
   margin-top: 6px;
+}
+
+footer {
+  font-size: 12px;
+  margin: 60px auto 60px auto;
 }
