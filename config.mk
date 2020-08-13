@@ -1,4 +1,4 @@
-CAFP_HOSTNAME=0.0.0.0
-CAFP_PORT=8002
-CAFP_BASE=/cafp
-CAFP_VERSION=$(shell git rev-parse HEAD | head -c8)
+UPLCG_HOSTNAME=0.0.0.0
+UPLCG_PORT=8002
+UPLCG_BASE=/uplcg
+UPLCG_VERSION=$(shell git rev-parse HEAD | head -c8)

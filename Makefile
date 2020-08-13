@@ -14,23 +14,23 @@ build: server/assets/client.js \
 
 .PHONY: docker
 docker:
-	docker build -t jaspervdj/cafp .
-	docker push jaspervdj/cafp
+	docker build -t jaspervdj/uplcg .
+	docker push jaspervdj/uplcg
 
 .PHONY: server
 server: build
 	(cd server && \
-	    CAFP_HOSTNAME=$(CAFP_HOSTNAME) \
-	    CAFP_PORT=$(CAFP_PORT) \
-	    CAFP_BASE=$(CAFP_BASE) \
-	    stack exec cafp-server)
+	    UPLCG_HOSTNAME=$(UPLCG_HOSTNAME) \
+	    UPLCG_PORT=$(UPLCG_PORT) \
+	    UPLCG_BASE=$(UPLCG_BASE) \
+	    stack exec uplcg-server)
 
 .PHONY: stack_build
 stack_build: $(HS_SOURCES)
 	(cd server && stack build)
 
 $(ELM_MESSAGES_SOURCE): stack_build
-	(cd server && stack exec cafp-generate-elm-types) >$(ELM_MESSAGES_SOURCE)
+	(cd server && stack exec uplcg-generate-elm-types) >$(ELM_MESSAGES_SOURCE)
 
 server/assets/client.js: $(ELM_MESSAGES_SOURCE) $(ELM_SOURCES)
 	mkdir -p server/assets
@@ -38,8 +38,8 @@ server/assets/client.js: $(ELM_MESSAGES_SOURCE) $(ELM_SOURCES)
 
 .PHONY: server/assets/client.html  # Depends on git hash.
 server/assets/client.html: client/index.html config.mk
-	sed "s@\$$CAFP_BASE@$(CAFP_BASE)@" $< | \
-	    sed "s@\$$CAFP_VERSION@$(CAFP_VERSION)@" >$@
+	sed "s@\$$UPLCG_BASE@$(UPLCG_BASE)@" $< | \
+	    sed "s@\$$UPLCG_VERSION@$(UPLCG_VERSION)@" >$@
 
 server/assets/style.css: client/style.css
 	cp $< $@

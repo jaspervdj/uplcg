@@ -3,7 +3,7 @@
 {-# LANGUAGE Rank2Types        #-}
 {-# LANGUAGE RecordWildCards   #-}
 {-# LANGUAGE TemplateHaskell   #-}
-module Cafp.Game
+module Uplcg.Game
     ( PlayerId
     , Table (..)
     , Player (..)
@@ -19,7 +19,7 @@ module Cafp.Game
     , gameViewForPlayer
     ) where
 
-import           Cafp.Messages
+import           Uplcg.Messages
 import           Control.Lens                 (Lens', at, iall, ifor_, imap, ix,
                                                orOf, to, (%%=), (%=), (%~), (&),
                                                (+=), (.=), (.~), (^.), (^..),

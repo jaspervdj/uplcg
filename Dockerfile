@@ -1,9 +1,9 @@
 FROM haskell:8.8
-WORKDIR /opt/cafp
-COPY server/cafp.cabal server/stack.yaml* /opt/cafp/
+WORKDIR /opt/uplcg
+COPY server/uplcg.cabal server/stack.yaml* /opt/uplcg/
 RUN stack build --only-dependencies
-COPY server /opt/cafp
+COPY server /opt/uplcg
 RUN stack build
-ENV CAFP_HOSTNAME=0.0.0.0 CAFP_PORT=8002 CAFP_BASE=/cafp
+ENV UPLCG_HOSTNAME=0.0.0.0 UPLCG_PORT=8002 UPLCG_BASE=/uplcg
 EXPOSE 8002
-CMD stack exec cafp-server
+CMD stack exec uplcg-server

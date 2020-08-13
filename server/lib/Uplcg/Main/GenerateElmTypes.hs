@@ -1,10 +1,10 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# LANGUAGE TemplateHaskell #-}
-module Cafp.Main.GenerateElmTypes
+module Uplcg.Main.GenerateElmTypes
     ( main
     ) where
 
-import           Cafp.Messages
+import           Uplcg.Messages
 import           Data.Proxy
 import           Elm.Module
 

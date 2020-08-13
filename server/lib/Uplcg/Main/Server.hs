@@ -1,17 +1,14 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Cafp.Main.Server
+module Uplcg.Main.Server
     ( main
     ) where
 
-import qualified Cafp.CookieSocket              as CookieSocket
-import           Cafp.Game
-import           Cafp.Messages
 import           Control.Concurrent.MVar        (MVar)
 import qualified Control.Concurrent.MVar        as MVar
 import           Control.Concurrent.STM         (STM, TVar, atomically)
 import qualified Control.Concurrent.STM         as STM
 import           Control.Exception              (bracket)
-import           Control.Lens                   ((^.), (&), (.~))
+import           Control.Lens                   ((&), (.~), (^.))
 import           Control.Monad                  (forever, when)
 import qualified Data.Aeson                     as Aeson
 import qualified Data.ByteString                as B
@@ -33,6 +30,9 @@ import qualified Network.WebSockets             as WS
 import           System.Environment             (getEnv)
 import qualified System.Log.FastLogger          as FL
 import           System.Random                  (StdGen, newStdGen)
+import qualified Uplcg.CookieSocket             as CookieSocket
+import           Uplcg.Game
+import           Uplcg.Messages
 import qualified Web.Scotty                     as Scotty
 
 type RoomId = T.Text
@@ -200,9 +200,9 @@ baseUrl prefix application = \req ->
 
 main :: IO ()
 main = do
-    host <- fromString <$> getEnv "CAFP_HOSTNAME"
-    port <- read <$> getEnv "CAFP_PORT"
-    base <- splitPath . T.pack <$> getEnv "CAFP_BASE"
+    host <- fromString <$> getEnv "UPLCG_HOSTNAME"
+    port <- read <$> getEnv "UPLCG_PORT"
+    base <- splitPath . T.pack <$> getEnv "UPLCG_BASE"
     let settings = Warp.setPort port . Warp.setHost host $ Warp.defaultSettings
     timeCache <- FL.newTimeCache FL.simpleTimeFormat
     FL.withTimedFastLogger timeCache

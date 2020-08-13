@@ -1,6 +1,6 @@
-Name:          cafp
+Name:          uplcg
 Version:       0.1.0
-Synopsis:      Cards Against Functional Programming
+Synopsis:      Untitled PL Card Game
 License:       BSD3
 License-file:  LICENSE
 Author:        Jasper Van der Jeugt <m@jaspervdj.be>
@@ -16,11 +16,11 @@ Library
   Hs-source-dirs:   lib
 
   Exposed-modules:
-    Cafp.CookieSocket
-    Cafp.Game
-    Cafp.Messages
-    Cafp.Main.GenerateElmTypes
-    Cafp.Main.Server
+    Uplcg.CookieSocket
+    Uplcg.Game
+    Uplcg.Messages
+    Uplcg.Main.GenerateElmTypes
+    Uplcg.Main.Server
 
   Build-depends:
     aeson                >= 1.4  && < 1.5,
@@ -48,16 +48,16 @@ Library
     warp                 >= 3.3  && < 3.4,
     websockets           >= 0.12 && < 0.13
 
-Executable cafp-generate-elm-types
+Executable uplcg-generate-elm-types
   Hs-source-dirs:   src
   Main-is:          GenerateElmTypes.hs
   Default-language: Haskell2010
   Ghc-options:      -Wall
-  Build-depends:    base, cafp
+  Build-depends:    base, uplcg
 
-Executable cafp-server
+Executable uplcg-server
   Hs-source-dirs:   src
   Main-is:          Server.hs
   Default-language: Haskell2010
   Ghc-options:      -Wall -O2 -threaded -rtsopts "-with-rtsopts=-N"
-  Build-depends:    base, cafp
+  Build-depends:    base, uplcg

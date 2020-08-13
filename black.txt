@@ -4,7 +4,7 @@
 # Some cards taken from:
 # https://github.com/CardsAgainstCryptography/CAC/blob/master/src/white.txt
 # Slightly modified to take out most sexist / racist / ... stuff and comply
-# with the cafp format.  Added more \BLANKs to a few because we can.
+# with the uplcg format.  Added more \BLANKs to a few because we can.
 A PL conference is never complete without \BLANK.
 Both Microsoft and Apple have concerns with \BLANK.
 Did you hear that \BLANK is the new hot topic?

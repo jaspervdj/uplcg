@@ -74,14 +74,14 @@ viewPlayers players = Html.table [] <|
 view : Model -> Browser.Document Msg
 view model = case model of
     Error str ->
-        { title = "CaFP: Error"
+        { title = "Untitled PL Card Game: Error"
         , body =
             [ Html.h1 [] [Html.text "Error"]
             , Html.p [] [Html.text str]
             ]
         }
     Connecting roomId ->
-        { title = "CaFP: Connecting"
+        { title = "Untitled PL Card Game: Connecting"
         , body =
             [ Html.h1 []
                 [ Html.text <|
@@ -91,8 +91,8 @@ view model = case model of
         }
     Game game ->
         { title = case game.room of
-            Nothing -> "CaFP"
-            Just room -> "CaFP | " ++ room
+            Nothing -> "Untitled PL Card Game"
+            Just room -> room ++ " | Untitled PL Card Game"
         , body =
             [ Html.div [Html.Attributes.class "main"] <|
                 [ Html.div [Html.Attributes.class "table"]

@@ -1,4 +1,4 @@
-import qualified Cafp.Main.Server
+import qualified Uplcg.Main.Server
 
 main :: IO ()
-main = Cafp.Main.Server.main
+main = Uplcg.Main.Server.main

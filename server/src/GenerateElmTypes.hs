@@ -1,4 +1,4 @@
-import qualified Cafp.Main.GenerateElmTypes
+import qualified Uplcg.Main.GenerateElmTypes
 
 main :: IO ()
-main = Cafp.Main.GenerateElmTypes.main
+main = Uplcg.Main.GenerateElmTypes.main

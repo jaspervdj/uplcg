@@ -3,12 +3,12 @@
   <head>
     <meta charset="UTF-8">
     <title>Client</title>
-    <link rel="stylesheet" type="text/css" href="$CAFP_BASE/assets/style.css">
+    <link rel="stylesheet" type="text/css" href="$UPLCG_BASE/assets/style.css">
     <meta name="viewport" content="width=device-width">
   </head>
   <body>
     <div id="main"></div>
-    <script type="text/JavaScript" src="$CAFP_BASE/assets/client.js"></script>
+    <script type="text/JavaScript" src="$UPLCG_BASE/assets/client.js"></script>
     <script>
       var app = Elm.Client.init({node: document.querySelector("main")});
 
@@ -18,12 +18,12 @@
           protocol = "wss:"
         }
         var path = document.location.pathname;
-        if(path.startsWith("$CAFP_BASE")) {
-          path = path.substr("$CAFP_BASE".length);
+        if(path.startsWith("$UPLCG_BASE")) {
+          path = path.substr("$UPLCG_BASE".length);
         }
         var roomId = path.split("/")[2];
         var url = protocol + "//" + document.location.host +
-          "$CAFP_BASE/rooms/" + roomId + "/events";
+          "$UPLCG_BASE/rooms/" + roomId + "/events";
 
         var socket = new WebSocket(url);
         var socketSend = function(message) {
@@ -46,6 +46,6 @@
 
       connect();
     </script>
-    <footer>CaFP version $CAFP_VERSION</footer>
+    <footer>Untitled PL Card Game version $UPLCG_VERSION</footer>
   </body>
 </html>

@@ -2,7 +2,7 @@
 -- side.
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings          #-}
-module Cafp.CookieSocket
+module Uplcg.CookieSocket
     ( Handle
     , withHandle
     , CookieName

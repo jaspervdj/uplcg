@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveGeneric   #-}
 {-# LANGUAGE TemplateHaskell #-}
-module Cafp.Messages
+module Uplcg.Messages
     ( BlackCard (..)
     , WhiteCard (..)
     , Cards (..)
