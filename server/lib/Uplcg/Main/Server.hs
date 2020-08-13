@@ -10,6 +10,7 @@ import qualified Control.Concurrent.STM         as STM
 import           Control.Exception              (bracket)
 import           Control.Lens                   ((&), (.~), (^.))
 import           Control.Monad                  (forever, when)
+import           Control.Monad.Trans            (liftIO)
 import qualified Data.Aeson                     as Aeson
 import qualified Data.ByteString                as B
 import qualified Data.ByteString.Lazy           as BL
@@ -30,9 +31,13 @@ import qualified Network.WebSockets             as WS
 import           System.Environment             (getEnv)
 import qualified System.Log.FastLogger          as FL
 import           System.Random                  (StdGen, newStdGen)
+import           Text.Blaze.Html.Renderer.Text  (renderHtml)
+import           Uplcg.BaseUrl                  (BaseUrl)
+import qualified Uplcg.BaseUrl                  as BaseUrl
 import qualified Uplcg.CookieSocket             as CookieSocket
 import           Uplcg.Game
 import           Uplcg.Messages
+import qualified Uplcg.Views                    as Views
 import qualified Web.Scotty                     as Scotty
 
 type RoomId = T.Text
@@ -46,7 +51,8 @@ data Room = Room
     }
 
 data Server = Server
-    { serverLogger       :: FL.FastLogger
+    { serverBaseUrl      :: BaseUrl
+    , serverLogger       :: FL.FastLogger
     , serverCookieSocket :: CookieSocket.Handle Player
     , serverCards        :: Cards
     , serverRooms        :: MVar (HMS.HashMap RoomId Room)
@@ -60,9 +66,9 @@ readCards = Cards
     parseCards  = V.fromList . filter (not . T.null) . map dropComment . T.lines
     dropComment = T.strip . fst . T.break (== '#')
 
-withServer :: FL.FastLogger -> (Server -> IO a) -> IO a
-withServer fl f = CookieSocket.withHandle 5 $ \cs -> do
-    f =<< Server fl cs <$> readCards <*> MVar.newMVar HMS.empty
+withServer :: BaseUrl -> FL.FastLogger -> (Server -> IO a) -> IO a
+withServer base fl f = CookieSocket.withHandle 5 $ \cs -> do
+    f =<< Server base fl cs <$> readCards <*> MVar.newMVar HMS.empty
 
 newRoom :: RoomId -> Cards -> StdGen -> STM Room
 newRoom rid cards gen = Room rid
@@ -74,8 +80,13 @@ parseRoomId txt
     | T.all isAlphaNum txt && T.length txt >= 6 = Right txt
     | otherwise                                 = Left "Bad room name"
 
-scottyApp :: IO Wai.Application
-scottyApp = Scotty.scottyApp $ do
+scottyApp :: Server -> IO Wai.Application
+scottyApp server = Scotty.scottyApp $ do
+    Scotty.get "/rooms" $ do
+        rooms <- liftIO . MVar.readMVar $ serverRooms server
+        Scotty.html . renderHtml . Views.rooms (serverBaseUrl server) $
+            HMS.keys rooms
+
     Scotty.get "/rooms/:id/" $ do
         rid <- Scotty.param "id"
         when (T.length rid < 6) $
@@ -94,9 +105,10 @@ scottyApp = Scotty.scottyApp $ do
 routePendingConnection :: WS.PendingConnection -> Maybe RoomId
 routePendingConnection pending =
     let path = T.decodeUtf8 . WS.requestPath $ WS.pendingRequest pending in
-    case splitPath path of
-        ["rooms", txt, "events"] | Right r <- parseRoomId txt -> Just r
-        _                                                     -> Nothing
+    case BaseUrl.parse path of
+        BaseUrl.BaseUrl ["rooms", txt, "events"] | Right r <- parseRoomId txt ->
+            Just r
+        _ -> Nothing
 
 getOrCreateRoom :: Server -> RoomId -> IO Room
 getOrCreateRoom server rid = MVar.modifyMVar (serverRooms server) $ \rooms ->
@@ -183,11 +195,8 @@ wsApp server pc = case routePendingConnection pc of
                 serverLogger server $ "Could not decode client message: " <>
                     FL.toLogStr (show msg)
 
-splitPath :: T.Text -> [T.Text]
-splitPath = filter (not . T.null) . T.split (== '/')
-
-baseUrl :: [T.Text] -> Wai.Middleware
-baseUrl prefix application = \req ->
+baseUrl :: BaseUrl -> Wai.Middleware
+baseUrl base@(BaseUrl.BaseUrl prefix) application = \req ->
     case L.stripPrefix prefix (Wai.pathInfo req) of
         Nothing   -> application req
         Just path -> application req
@@ -196,19 +205,19 @@ baseUrl prefix application = \req ->
                 B.stripPrefix bs $ Wai.rawPathInfo req
             }
   where
-    bs = T.encodeUtf8 $ "/" <> T.intercalate "/" prefix
+    bs = T.encodeUtf8 $ BaseUrl.render base
 
 main :: IO ()
 main = do
     host <- fromString <$> getEnv "UPLCG_HOSTNAME"
     port <- read <$> getEnv "UPLCG_PORT"
-    base <- splitPath . T.pack <$> getEnv "UPLCG_BASE"
+    base <- BaseUrl.parse . T.pack <$> getEnv "UPLCG_BASE"
     let settings = Warp.setPort port . Warp.setHost host $ Warp.defaultSettings
     timeCache <- FL.newTimeCache FL.simpleTimeFormat
     FL.withTimedFastLogger timeCache
             (FL.LogStderr FL.defaultBufSize) $ \tfl ->
         let fl s = tfl (\time -> FL.toLogStr time <> " " <> s <> "\n") in
-        withServer fl $ \server -> do
-        sapp <- scottyApp
+        withServer base fl $ \server -> do
+        sapp <- scottyApp server
         Warp.runSettings settings $ baseUrl base $
             WaiWs.websocketsOr WS.defaultConnectionOptions (wsApp server) sapp
