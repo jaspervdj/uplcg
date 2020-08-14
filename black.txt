@@ -1,6 +1,14 @@
 # ICFP2020 Cards
 \BLANK is just \BLANK in the Category of \BLANK.
-My next paper title is: The next 700 \BLANK.
+My next paper title? The next 700 \BLANK.
+Procrastinating on my paper by working on \BLANK.
+\BLANK and \BLANK. A match made in heaven.
+Without \BLANK we wouldn't have \BLANK.
+Reviewer 2 found my paper guilty of \BLANK.
+\BLANK is just a special case of \BLANK.
+Listen, if you want to get involved with \BLANK, just stay clear of \BLANK.
+\BLANK would be woefully incomplete without \BLANK.
+\BLANK: Hours of fun. Easy to use. Perfect for \BLANK!
 
 # Some cards taken from:
 # https://github.com/CardsAgainstCryptography/CAC/blob/master/src/white.txt
