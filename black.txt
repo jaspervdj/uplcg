@@ -1,5 +1,6 @@
 # ICFP2020 Cards
 \BLANK is just \BLANK in the Category of \BLANK.
+My next paper title is: The next 700 \BLANK.
 
 # Some cards taken from:
 # https://github.com/CardsAgainstCryptography/CAC/blob/master/src/white.txt
