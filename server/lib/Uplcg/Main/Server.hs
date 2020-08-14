@@ -24,6 +24,7 @@ import qualified Data.Text                      as T
 import qualified Data.Text.Encoding             as T
 import qualified Data.Text.IO                   as T
 import qualified Data.Text.Lazy                 as TL
+import           Data.Traversable               (for)
 import qualified Data.Vector                    as V
 import qualified Network.Wai                    as Wai
 import qualified Network.Wai.Handler.Warp       as Warp
@@ -78,8 +79,17 @@ newRoom rid cards gen = Room rid
 
 parseRoomId :: T.Text -> Either String T.Text
 parseRoomId txt
-    | T.all isAlphaNum txt && T.length txt >= 6 = Right txt
+    | T.all isAlphaNum txt && l >= 6 && l <= 32 = Right txt
     | otherwise                                 = Left "Bad room name"
+  where
+    l = T.length txt
+
+roomViews :: Server -> IO [Views.RoomView]
+roomViews server = do
+    rooms <- liftIO . MVar.readMVar $ serverRooms server
+    liftIO . for (HMS.toList rooms) $ \(rid, room) ->
+        fmap (Views.RoomView rid . HMS.size) . atomically . STM.readTVar $
+        roomSinks room
 
 scottyApp :: Server -> IO Wai.Application
 scottyApp server = Scotty.scottyApp $ do
@@ -88,9 +98,8 @@ scottyApp server = Scotty.scottyApp $ do
             BaseUrl.render (serverBaseUrl server) <> "/rooms"
 
     Scotty.get "/rooms" $ do
-        rooms <- liftIO . MVar.readMVar $ serverRooms server
-        Scotty.html . renderHtml . Views.rooms (serverBaseUrl server) $
-            HMS.keys rooms
+        views <- liftIO $ roomViews server
+        Scotty.html . renderHtml $ Views.rooms (serverBaseUrl server) views
 
     Scotty.get "/rooms/:id/" $ do
         rid <- Scotty.param "id"

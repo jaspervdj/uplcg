@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Uplcg.Views
-    ( rooms
+    ( RoomView (..)
+    , rooms
     ) where
 
 import           Data.Foldable               (for_)
@@ -10,7 +11,9 @@ import qualified Text.Blaze.Html5.Attributes as A
 import           Uplcg.BaseUrl               (BaseUrl)
 import qualified Uplcg.BaseUrl               as BaseUrl
 
-rooms :: BaseUrl -> [Text] -> H.Html
+data RoomView = RoomView Text Int
+
+rooms :: BaseUrl -> [RoomView] -> H.Html
 rooms base rids = H.docTypeHtml $ do
     H.head $ do
         H.meta H.! A.charset "UTF-8"
@@ -18,7 +21,10 @@ rooms base rids = H.docTypeHtml $ do
             H.! A.href (H.toValue $ BaseUrl.render base <> "/assets/style.css")
     H.body $ do
         H.h1 "Rooms"
-        H.ul $ for_ rids $ \rid -> H.li $
+        H.ul $ for_ rids $ \(RoomView rid num) -> H.li $ do
             H.a H.! A.href (H.toValue $ BaseUrl.render base <> "/rooms/" <> rid) $
                 H.toHtml rid
+            " ("
+            H.toHtml num
+            ")"
         H.footer $ "Untitled PL Card Game"
