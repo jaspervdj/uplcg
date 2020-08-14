@@ -50,6 +50,9 @@ a Brief, Incomplete, and Mostly Wrong History of Programming Languages
 # no class, no state
 # soundy
 an abstract domain for neural networks
+a PhD office with windows
+a profile picture from 20 years ago
+an academic website powered by Hakyll
 
 # paper titles 
 do be do be do
