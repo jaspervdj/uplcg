@@ -23,6 +23,7 @@ import           Data.String                    (fromString)
 import qualified Data.Text                      as T
 import qualified Data.Text.Encoding             as T
 import qualified Data.Text.IO                   as T
+import qualified Data.Text.Lazy                 as TL
 import qualified Data.Vector                    as V
 import qualified Network.Wai                    as Wai
 import qualified Network.Wai.Handler.Warp       as Warp
@@ -82,6 +83,10 @@ parseRoomId txt
 
 scottyApp :: Server -> IO Wai.Application
 scottyApp server = Scotty.scottyApp $ do
+    Scotty.get "/" $
+        Scotty.redirect $ TL.fromStrict $
+            BaseUrl.render (serverBaseUrl server) <> "/rooms"
+
     Scotty.get "/rooms" $ do
         rooms <- liftIO . MVar.readMVar $ serverRooms server
         Scotty.html . renderHtml . Views.rooms (serverBaseUrl server) $
