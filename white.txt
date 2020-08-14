@@ -19,7 +19,8 @@ the Vim vs Emacs dilemma
 the fear of side effects 
 error reporting 
 readable type errors 
-Haskell wins at icfp programming contest
+Haskell wins at ICFP programming contest
+C++ wins at ICFP programming contest
 a cryptocurrency developed using Coq 
 monads are like burritos 
 the egg of Coq 
@@ -28,20 +29,50 @@ HoTT getting cold
 the lambdaman  
 a presentation without a joke 
 a french paper not formalized in Coq 
+a non-poultry themed Coq library
+ICFP
+POPL
+PLDI
+OOPSLA
+cabal hell
+Category Theory
+executing Agda code
+a job talk starting with Heartbleed
+a type system that prevents planes from crashing
+pLdI iS bEtTeR tHaN iCfP
+a time when ML did not mean machine learning
+# SML and formal semantics
+that CSmith found 0* bugs in CompCert
+well-typed programs don't go wrong
+a complete type system
+division by zero
+a Brief, Incomplete, and Mostly Wrong History of Programming Languages
+# no class, no state
+# soundy
+an abstract domain for neural networks
 
 # paper titles 
 do be do be do
 the marriage of effects and monads 
+Coq Coq Correct!
+# gradual typing is dead
 
 # Cards including comminity people's names that we should ask for permission 
 Conor's high tech presentation
 an ICFP with 0 SPJ accepted papers 
-
+Ranjit's Lambda Style
+# Asking Annabelle
+# HIcks
+# a climate change talk by Benjamin Pierce
+# Stephanie
+# Adam
+# Phil Wadler
+# Ron + Tander
 
 # Cards taken from
 # https://github.com/CardsAgainstCryptography/CAC/blob/master/src/white.txt
 # Filtered down to remove some sexism / racism / ... and irrelevant cards.
-100% talks, 0\% human interaction
+100% talks, 0% human interaction
 16-bit AES
 Thinking I'm so clever for using pictures of Alice (Cooper) and Bob (Marley)
 a career-limiting card game
