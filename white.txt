@@ -53,6 +53,13 @@ an abstract domain for neural networks
 a PhD office with windows
 a profile picture from 20 years ago
 an academic website powered by Hakyll
+continuations
+liberally adding axioms
+unironically using Windows
+my parents asking when I’ll get a real job
+PL memes
+not really caring about OOP
+endless discussions about syntax
 
 # paper titles 
 do be do be do
