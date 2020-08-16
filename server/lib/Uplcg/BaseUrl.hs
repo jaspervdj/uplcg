@@ -7,7 +7,7 @@ module Uplcg.BaseUrl
 
 import qualified Data.Text as T
 
-newtype BaseUrl = BaseUrl [T.Text]
+newtype BaseUrl = BaseUrl [T.Text] deriving (Show)
 
 render :: BaseUrl -> T.Text
 render (BaseUrl []) = ""

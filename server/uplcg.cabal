@@ -18,6 +18,7 @@ Library
   Exposed-modules:
     Uplcg.BaseUrl
     Uplcg.CookieSocket
+    Uplcg.Config
     Uplcg.Game
     Uplcg.Main.GenerateElmTypes
     Uplcg.Main.Server

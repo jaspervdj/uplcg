@@ -36,6 +36,8 @@ import           System.Random                  (StdGen, newStdGen)
 import           Text.Blaze.Html.Renderer.Text  (renderHtml)
 import           Uplcg.BaseUrl                  (BaseUrl)
 import qualified Uplcg.BaseUrl                  as BaseUrl
+import           Uplcg.Config                   (Config)
+import qualified Uplcg.Config                   as Config
 import qualified Uplcg.CookieSocket             as CookieSocket
 import           Uplcg.Game
 import           Uplcg.Messages
@@ -53,7 +55,7 @@ data Room = Room
     }
 
 data Server = Server
-    { serverBaseUrl      :: BaseUrl
+    { serverConfig       :: Config
     , serverLogger       :: FL.FastLogger
     , serverCookieSocket :: CookieSocket.Handle Player
     , serverCards        :: Cards
@@ -68,9 +70,9 @@ readCards = Cards
     parseCards  = V.fromList . filter (not . T.null) . map dropComment . T.lines
     dropComment = T.strip . fst . T.break (== '#')
 
-withServer :: BaseUrl -> FL.FastLogger -> (Server -> IO a) -> IO a
-withServer base fl f = CookieSocket.withHandle 5 $ \cs -> do
-    f =<< Server base fl cs <$> readCards <*> MVar.newMVar HMS.empty
+withServer :: Config -> FL.FastLogger -> (Server -> IO a) -> IO a
+withServer conf fl f = CookieSocket.withHandle 5 $ \cs -> do
+    f =<< Server conf fl cs <$> readCards <*> MVar.newMVar HMS.empty
 
 newRoom :: RoomId -> Cards -> StdGen -> STM Room
 newRoom rid cards gen = Room rid
@@ -95,11 +97,11 @@ scottyApp :: Server -> IO Wai.Application
 scottyApp server = Scotty.scottyApp $ do
     Scotty.get "/" $
         Scotty.redirect $ TL.fromStrict $
-            BaseUrl.render (serverBaseUrl server) <> "/rooms"
+            BaseUrl.render (Config.cBaseUrl $ serverConfig server) <> "/rooms"
 
     Scotty.get "/rooms" $ do
         views <- liftIO $ roomViews server
-        Scotty.html . renderHtml $ Views.rooms (serverBaseUrl server) views
+        Scotty.html . renderHtml $ Views.rooms (serverConfig server) views
 
     Scotty.get "/rooms/:id/" $ do
         rid <- Scotty.param "id"
@@ -223,15 +225,15 @@ baseUrl base@(BaseUrl.BaseUrl prefix) application = \req ->
 
 main :: IO ()
 main = do
-    host <- fromString <$> getEnv "UPLCG_HOSTNAME"
-    port <- read <$> getEnv "UPLCG_PORT"
-    base <- BaseUrl.parse . T.pack <$> getEnv "UPLCG_BASE"
-    let settings = Warp.setPort port . Warp.setHost host $ Warp.defaultSettings
+    config <- Config.fromEnv
+    let settings = Warp.setPort (Config.cPort config) .
+            Warp.setHost (fromString $ Config.cHostname config) $
+            Warp.defaultSettings
     timeCache <- FL.newTimeCache FL.simpleTimeFormat
     FL.withTimedFastLogger timeCache
             (FL.LogStderr FL.defaultBufSize) $ \tfl ->
         let fl s = tfl (\time -> FL.toLogStr time <> " " <> s <> "\n") in
-        withServer base fl $ \server -> do
+        withServer config fl $ \server -> do
         sapp <- scottyApp server
-        Warp.runSettings settings $ baseUrl base $
+        Warp.runSettings settings $ baseUrl (Config.cBaseUrl config) $
             WaiWs.websocketsOr WS.defaultConnectionOptions (wsApp server) sapp
