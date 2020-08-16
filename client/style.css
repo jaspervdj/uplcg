@@ -118,6 +118,15 @@ button, input {
   margin-top: 6px;
 }
 
+.rooms {
+  max-width: 800px;
+  margin: auto;
+}
+
+.rooms ul {
+  text-align: left;
+}
+
 footer {
   font-size: 12px;
   margin: 60px auto 60px auto;

@@ -31,15 +31,16 @@ template conf title body = H.docTypeHtml $ do
         H.footer $ "Untitled PL Card Game version " <> H.toHtml version
 
 rooms :: Config -> [RoomView] -> H.Html
-rooms conf rids = template conf "Untitled PL Card Game" $ do
-    H.h1 "Rooms"
-    H.ul $ for_ rids $ \(RoomView rid num) -> H.li $ do
-        H.a H.! A.href (H.toValue $
-                BaseUrl.render (cBaseUrl conf) <> "/rooms/" <> rid) $
-            H.toHtml rid
-        " ("
-        H.toHtml num
-        ")"
+rooms conf rids = template conf "Untitled PL Card Game" $
+    H.div H.! A.class_ "rooms" $ do
+        H.h1 "Rooms"
+        H.ul $ for_ rids $ \(RoomView rid num) -> H.li $ do
+            H.a H.! A.href (H.toValue $
+                    BaseUrl.render (cBaseUrl conf) <> "/rooms/" <> rid) $
+                H.toHtml rid
+            " ("
+            H.toHtml num
+            ")"
 
 client :: Config -> Text -> H.Html
 client conf roomId = template conf "Untitled PL Card Game" $ do
