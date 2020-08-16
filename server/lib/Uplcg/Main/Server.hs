@@ -9,7 +9,7 @@ import           Control.Concurrent.STM         (STM, TVar, atomically)
 import qualified Control.Concurrent.STM         as STM
 import           Control.Exception              (bracket)
 import           Control.Lens                   ((&), (.~), (^.))
-import           Control.Monad                  (forever, when)
+import           Control.Monad                  (forever)
 import           Control.Monad.Trans            (liftIO)
 import qualified Data.Aeson                     as Aeson
 import qualified Data.ByteString                as B
@@ -30,7 +30,6 @@ import qualified Network.Wai                    as Wai
 import qualified Network.Wai.Handler.Warp       as Warp
 import qualified Network.Wai.Handler.WebSockets as WaiWs
 import qualified Network.WebSockets             as WS
-import           System.Environment             (getEnv)
 import qualified System.Log.FastLogger          as FL
 import           System.Random                  (StdGen, newStdGen)
 import           Text.Blaze.Html.Renderer.Text  (renderHtml)
@@ -104,11 +103,9 @@ scottyApp server = Scotty.scottyApp $ do
         Scotty.html . renderHtml $ Views.rooms (serverConfig server) views
 
     Scotty.get "/rooms/:id/" $ do
-        rid <- Scotty.param "id"
-        when (T.length rid < 6) $
-            Scotty.raise "Room ID should be at least 6 characters"
-        Scotty.setHeader "Content-Type" "text/html"
-        Scotty.file "assets/client.html"
+        rid <- Scotty.param "id" >>=
+            either (Scotty.raise . TL.pack) pure . parseRoomId
+        Scotty.html . renderHtml $ Views.client (serverConfig server) rid
 
     Scotty.get "/assets/client.js" $ do
         Scotty.setHeader "Content-Type" "application/JavaScript"

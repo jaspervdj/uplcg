@@ -14,6 +14,7 @@ Library
   Default-language: Haskell2010
   Ghc-options:      -Wall
   Hs-source-dirs:   lib
+  Other-modules:    Paths_uplcg
 
   Exposed-modules:
     Uplcg.BaseUrl
@@ -23,6 +24,7 @@ Library
     Uplcg.Main.GenerateElmTypes
     Uplcg.Main.Server
     Uplcg.Messages
+    Uplcg.Version
     Uplcg.Views
 
   Build-depends:
@@ -36,9 +38,11 @@ Library
     hashable             >= 1.3  && < 1.4,
     lens                 >= 4.18 && < 4.19,
     mtl                  >= 2.2  && < 2.3,
+    process              >= 1.6  && < 1.7,
     random               >= 1.1  && < 1.2,
     scotty               >= 0.11 && < 0.12,
     stm                  >= 2.5  && < 2.6,
+    template-haskell     >= 2.15 && < 2.16,
     text                 >= 1.2  && < 1.3,
     time                 >= 1.9  && < 1.10,
     unordered-containers >= 0.2  && < 0.3,
