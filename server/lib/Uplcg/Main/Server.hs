@@ -9,7 +9,8 @@ import           Control.Concurrent.STM         (STM, TVar, atomically)
 import qualified Control.Concurrent.STM         as STM
 import           Control.Exception              (bracket)
 import           Control.Lens                   ((&), (.~), (^.))
-import           Control.Monad                  (forever, when)
+import           Control.Monad                  (forever)
+import           Control.Monad.Trans            (liftIO)
 import qualified Data.Aeson                     as Aeson
 import qualified Data.ByteString                as B
 import qualified Data.ByteString.Lazy           as BL
@@ -22,17 +23,24 @@ import           Data.String                    (fromString)
 import qualified Data.Text                      as T
 import qualified Data.Text.Encoding             as T
 import qualified Data.Text.IO                   as T
+import qualified Data.Text.Lazy                 as TL
+import           Data.Traversable               (for)
 import qualified Data.Vector                    as V
 import qualified Network.Wai                    as Wai
 import qualified Network.Wai.Handler.Warp       as Warp
 import qualified Network.Wai.Handler.WebSockets as WaiWs
 import qualified Network.WebSockets             as WS
-import           System.Environment             (getEnv)
 import qualified System.Log.FastLogger          as FL
 import           System.Random                  (StdGen, newStdGen)
+import           Text.Blaze.Html.Renderer.Text  (renderHtml)
+import           Uplcg.BaseUrl                  (BaseUrl)
+import qualified Uplcg.BaseUrl                  as BaseUrl
+import           Uplcg.Config                   (Config)
+import qualified Uplcg.Config                   as Config
 import qualified Uplcg.CookieSocket             as CookieSocket
 import           Uplcg.Game
 import           Uplcg.Messages
+import qualified Uplcg.Views                    as Views
 import qualified Web.Scotty                     as Scotty
 
 type RoomId = T.Text
@@ -46,7 +54,8 @@ data Room = Room
     }
 
 data Server = Server
-    { serverLogger       :: FL.FastLogger
+    { serverConfig       :: Config
+    , serverLogger       :: FL.FastLogger
     , serverCookieSocket :: CookieSocket.Handle Player
     , serverCards        :: Cards
     , serverRooms        :: MVar (HMS.HashMap RoomId Room)
@@ -60,9 +69,9 @@ readCards = Cards
     parseCards  = V.fromList . filter (not . T.null) . map dropComment . T.lines
     dropComment = T.strip . fst . T.break (== '#')
 
-withServer :: FL.FastLogger -> (Server -> IO a) -> IO a
-withServer fl f = CookieSocket.withHandle 5 $ \cs -> do
-    f =<< Server fl cs <$> readCards <*> MVar.newMVar HMS.empty
+withServer :: Config -> FL.FastLogger -> (Server -> IO a) -> IO a
+withServer conf fl f = CookieSocket.withHandle 5 $ \cs -> do
+    f =<< Server conf fl cs <$> readCards <*> MVar.newMVar HMS.empty
 
 newRoom :: RoomId -> Cards -> StdGen -> STM Room
 newRoom rid cards gen = Room rid
@@ -71,17 +80,32 @@ newRoom rid cards gen = Room rid
 
 parseRoomId :: T.Text -> Either String T.Text
 parseRoomId txt
-    | T.all isAlphaNum txt && T.length txt >= 6 = Right txt
+    | T.all isAlphaNum txt && l >= 6 && l <= 32 = Right txt
     | otherwise                                 = Left "Bad room name"
+  where
+    l = T.length txt
 
-scottyApp :: IO Wai.Application
-scottyApp = Scotty.scottyApp $ do
+roomViews :: Server -> IO [Views.RoomView]
+roomViews server = do
+    rooms <- liftIO . MVar.readMVar $ serverRooms server
+    liftIO . for (HMS.toList rooms) $ \(rid, room) ->
+        fmap (Views.RoomView rid . HMS.size) . atomically . STM.readTVar $
+        roomSinks room
+
+scottyApp :: Server -> IO Wai.Application
+scottyApp server = Scotty.scottyApp $ do
+    Scotty.get "/" $
+        Scotty.redirect $ TL.fromStrict $
+            BaseUrl.render (Config.cBaseUrl $ serverConfig server) <> "/rooms"
+
+    Scotty.get "/rooms" $ do
+        views <- liftIO $ roomViews server
+        Scotty.html . renderHtml $ Views.rooms (serverConfig server) views
+
     Scotty.get "/rooms/:id/" $ do
-        rid <- Scotty.param "id"
-        when (T.length rid < 6) $
-            Scotty.raise "Room ID should be at least 6 characters"
-        Scotty.setHeader "Content-Type" "text/html"
-        Scotty.file "assets/client.html"
+        rid <- Scotty.param "id" >>=
+            either (Scotty.raise . TL.pack) pure . parseRoomId
+        Scotty.html . renderHtml $ Views.client (serverConfig server) rid
 
     Scotty.get "/assets/client.js" $ do
         Scotty.setHeader "Content-Type" "application/JavaScript"
@@ -94,9 +118,10 @@ scottyApp = Scotty.scottyApp $ do
 routePendingConnection :: WS.PendingConnection -> Maybe RoomId
 routePendingConnection pending =
     let path = T.decodeUtf8 . WS.requestPath $ WS.pendingRequest pending in
-    case splitPath path of
-        ["rooms", txt, "events"] | Right r <- parseRoomId txt -> Just r
-        _                                                     -> Nothing
+    case BaseUrl.parse path of
+        BaseUrl.BaseUrl ["rooms", txt, "events"] | Right r <- parseRoomId txt ->
+            Just r
+        _ -> Nothing
 
 getOrCreateRoom :: Server -> RoomId -> IO Room
 getOrCreateRoom server rid = MVar.modifyMVar (serverRooms server) $ \rooms ->
@@ -183,11 +208,8 @@ wsApp server pc = case routePendingConnection pc of
                 serverLogger server $ "Could not decode client message: " <>
                     FL.toLogStr (show msg)
 
-splitPath :: T.Text -> [T.Text]
-splitPath = filter (not . T.null) . T.split (== '/')
-
-baseUrl :: [T.Text] -> Wai.Middleware
-baseUrl prefix application = \req ->
+baseUrl :: BaseUrl -> Wai.Middleware
+baseUrl base@(BaseUrl.BaseUrl prefix) application = \req ->
     case L.stripPrefix prefix (Wai.pathInfo req) of
         Nothing   -> application req
         Just path -> application req
@@ -196,19 +218,19 @@ baseUrl prefix application = \req ->
                 B.stripPrefix bs $ Wai.rawPathInfo req
             }
   where
-    bs = T.encodeUtf8 $ "/" <> T.intercalate "/" prefix
+    bs = T.encodeUtf8 $ BaseUrl.render base
 
 main :: IO ()
 main = do
-    host <- fromString <$> getEnv "UPLCG_HOSTNAME"
-    port <- read <$> getEnv "UPLCG_PORT"
-    base <- splitPath . T.pack <$> getEnv "UPLCG_BASE"
-    let settings = Warp.setPort port . Warp.setHost host $ Warp.defaultSettings
+    config <- Config.fromEnv
+    let settings = Warp.setPort (Config.cPort config) .
+            Warp.setHost (fromString $ Config.cHostname config) $
+            Warp.defaultSettings
     timeCache <- FL.newTimeCache FL.simpleTimeFormat
     FL.withTimedFastLogger timeCache
             (FL.LogStderr FL.defaultBufSize) $ \tfl ->
         let fl s = tfl (\time -> FL.toLogStr time <> " " <> s <> "\n") in
-        withServer fl $ \server -> do
-        sapp <- scottyApp
-        Warp.runSettings settings $ baseUrl base $
+        withServer config fl $ \server -> do
+        sapp <- scottyApp server
+        Warp.runSettings settings $ baseUrl (Config.cBaseUrl config) $
             WaiWs.websocketsOr WS.defaultConnectionOptions (wsApp server) sapp

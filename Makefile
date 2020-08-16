@@ -7,7 +7,6 @@ STACK_BIN=$(shell cd server && stack path --local-install-root)/bin
 
 .PHONY: build
 build: server/assets/client.js \
-	server/assets/client.html \
 	server/assets/style.css \
 	server/assets/black.txt \
 	server/assets/white.txt
@@ -35,11 +34,6 @@ $(ELM_MESSAGES_SOURCE): stack_build
 server/assets/client.js: $(ELM_MESSAGES_SOURCE) $(ELM_SOURCES)
 	mkdir -p server/assets
 	cd client && elm make src/Client.elm --optimize --output=../$@
-
-.PHONY: server/assets/client.html  # Depends on git hash.
-server/assets/client.html: client/index.html config.mk
-	sed "s@\$$UPLCG_BASE@$(UPLCG_BASE)@" $< | \
-	    sed "s@\$$UPLCG_VERSION@$(UPLCG_VERSION)@" >$@
 
 server/assets/style.css: client/style.css
 	cp $< $@
