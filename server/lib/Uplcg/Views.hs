@@ -5,17 +5,19 @@ module Uplcg.Views
     , client
     ) where
 
+import           Control.Monad                (when)
 import qualified Data.ByteString.Lazy.Builder as BLB
 import           Data.Foldable                (for_)
 import           Data.Text                    (Text)
 import qualified Data.Text.Encoding           as T
+import qualified Network.HTTP.Types.URI       as HttpUri
 import qualified Text.Blaze.Html5             as H
 import qualified Text.Blaze.Html5.Attributes  as A
 import qualified Uplcg.BaseUrl                as BaseUrl
 import           Uplcg.Config
 import           Uplcg.Version                (version)
 
-data RoomView = RoomView Text Int
+data RoomView = RoomView Text Bool Int
 
 template :: Config -> Text -> H.Html -> H.Html
 template conf title body = H.docTypeHtml $ do
@@ -36,16 +38,29 @@ rooms conf rids = template conf "Untitled PL Card Game" $
         H.h1 "Rooms"
         if null rids
             then H.p "No rooms online."
-            else H.ul $ for_ rids $ \(RoomView rid num) -> H.li $ do
+            else H.ul $ for_ rids $ \(RoomView rid lock num) -> H.li $ do
                 H.a H.! A.href (H.toValue $
                         BaseUrl.render (cBaseUrl conf) <> "/rooms/" <> rid) $
                     H.toHtml rid
+                when lock  " 🔒"
                 " ("
                 H.toHtml num
                 ")"
 
-client :: Config -> Text -> H.Html
-client conf roomId = template conf "Untitled PL Card Game" $ do
+        H.br
+        H.h1 "Create Room"
+        H.form H.! A.method "POST" H.! A.action (H.toValue $
+                BaseUrl.render (cBaseUrl conf) <> "/rooms") $ do
+            H.label H.! A.for "name" $ "Room name: "
+            H.input H.! A.type_ "text" H.! A.name "id"
+            H.br
+            H.label H.! A.for "name" $ "Password (optional): "
+            H.input H.! A.type_ "text" H.! A.name "password"
+            H.br
+            H.input H.! A.type_ "submit" H.! A.value "Create room"
+
+client :: Config -> Text -> Maybe Text -> H.Html
+client conf roomId mbPassword = template conf "Untitled PL Card Game" $ do
     H.div H.! A.id "main" $ ""
     H.script H.! A.type_ "text/JavaScript"
         H.! A.src (H.toValue $
@@ -63,7 +78,12 @@ client conf roomId = template conf "Untitled PL Card Game" $ do
       "  }" <>
       "  var url = protocol + '//' + document.location.host +" <>
       "    '" <> t2b (BaseUrl.render $ cBaseUrl conf) <> "/rooms/" <>
-          t2b roomId <> "/events';" <>
+          t2b roomId <> "/events" <>
+          (case mbPassword of
+              Nothing -> ""
+              Just pwd -> BLB.byteString $ HttpUri.renderSimpleQuery True
+                  [("password", T.encodeUtf8 pwd)]) <>
+              "';" <>
       "  var socket = new WebSocket(url);" <>
       "  var socketSend = function(message) {" <>
       "    socket.send(message);" <>

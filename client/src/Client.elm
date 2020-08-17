@@ -118,6 +118,7 @@ view model = case model of
                         , Html.Events.onInput ChangeMyName
                         ]
                         []
+                    , Html.br [] []
                     , Html.button
                         [ Html.Attributes.type_ "submit"
                         , Html.Attributes.disabled <|
@@ -153,6 +154,7 @@ viewTable game = case game.view.table of
                 " from your hand"
             ]
         , blackCard [] game.cards c <| selectedWhiteCards game
+        , Html.br [] []
         , Html.button
             [ Html.Attributes.disabled <|
                 List.length my > 0 ||
@@ -163,7 +165,8 @@ viewTable game = case game.view.table of
             [Html.text "Propose"]
         ] ++
         ifAdmin game.view
-            [ Html.button
+            [ Html.br [] []
+            , Html.button
                 [Html.Events.onClick AdminSkipProposals]
                 [Html.text "Skip remaining players"]
             ]
@@ -180,7 +183,8 @@ viewTable game = case game.view.table of
                         , Html.Attributes.class "votable"
                         ] in
             blackCard attrs game.cards black proposal) proposals ++
-        [ Html.button
+        [ Html.br [] []
+        , Html.button
             [ Html.Attributes.disabled <|
                 (case myVote of
                      Just _ -> True
@@ -192,7 +196,8 @@ viewTable game = case game.view.table of
             [Html.text "Vote"]
         ] ++
         ifAdmin game.view
-            [ Html.button
+            [ Html.br [] []
+            , Html.button
                 [Html.Events.onClick AdminSkipVotes]
                 [Html.text "Skip remaining players"]
             ]
@@ -214,7 +219,8 @@ viewTable game = case game.view.table of
                 ])
             results ++
         ifAdmin game.view
-            [ Html.button
+            [ Html.br [] []
+            , Html.button
                 [Html.Events.onClick AdminConfirmTally]
                 [Html.text "Next round"]
             ]
