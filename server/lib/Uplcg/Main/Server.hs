@@ -21,14 +21,12 @@ import           Data.Char                       (isAlphaNum)
 import           Data.Foldable                   (for_)
 import           Data.Hashable                   (Hashable)
 import qualified Data.HashMap.Strict             as HMS
-import qualified Data.List                       as L
-import           Data.Maybe                      (fromMaybe, isNothing)
+import           Data.Maybe                      (isNothing)
 import           Data.String                     (fromString)
 import qualified Data.Text                       as T
 import qualified Data.Text.Encoding              as T
 import qualified Data.Text.IO                    as T
 import qualified Data.Text.Lazy                  as TL
-import qualified Data.Text.Lazy.Encoding         as TL
 import           Data.Traversable                (for)
 import qualified Data.Vector                     as V
 import qualified Network.HTTP.Types.Status       as HttpStatus
@@ -38,13 +36,10 @@ import qualified Network.Wai.Handler.Warp        as Warp
 import qualified Network.Wai.Handler.WebSockets  as WaiWs
 import qualified Network.Wai.Middleware.HttpAuth as HttpAuth
 import qualified Network.WebSockets              as WS
+import           System.Environment              (getEnv)
 import qualified System.Log.FastLogger           as FL
 import           System.Random                   (StdGen, newStdGen)
 import           Text.Blaze.Html.Renderer.Text   (renderHtml)
-import           Uplcg.BaseUrl                   (BaseUrl)
-import qualified Uplcg.BaseUrl                   as BaseUrl
-import           Uplcg.Config                    (Config)
-import qualified Uplcg.Config                    as Config
 import qualified Uplcg.CookieSocket              as CookieSocket
 import           Uplcg.Game
 import           Uplcg.Messages
@@ -66,8 +61,7 @@ data Room = Room
     }
 
 data Server = Server
-    { serverConfig       :: Config
-    , serverLogger       :: FL.FastLogger
+    { serverLogger       :: FL.FastLogger
     , serverCookieSocket :: CookieSocket.Handle Player
     , serverCards        :: Cards
     , serverRooms        :: MVar (HMS.HashMap RoomId Room)
@@ -81,9 +75,9 @@ readCards = Cards
     parseCards  = V.fromList . filter (not . T.null) . map dropComment . T.lines
     dropComment = T.strip . fst . T.break (== '#')
 
-withServer :: Config -> FL.FastLogger -> (Server -> IO a) -> IO a
-withServer conf fl f = CookieSocket.withHandle 5 $ \cs -> do
-    f =<< Server conf fl cs <$> readCards <*> MVar.newMVar HMS.empty
+withServer :: FL.FastLogger -> (Server -> IO a) -> IO a
+withServer fl f = CookieSocket.withHandle 5 $ \cs -> do
+    f =<< Server fl cs <$> readCards <*> MVar.newMVar HMS.empty
 
 newRoom :: RoomId -> RoomPassword -> Cards -> StdGen -> STM Room
 newRoom rid rpw cards gen = Room rid rpw
@@ -150,20 +144,17 @@ getPassword = do
 
 scottyApp :: Server -> IO Wai.Application
 scottyApp server = Scotty.scottyApp $ do
-    Scotty.get "/" $
-        Scotty.redirect $ TL.fromStrict $
-            BaseUrl.render (Config.cBaseUrl $ serverConfig server) <> "/rooms"
+    Scotty.get "/" $ Scotty.redirect $ "/rooms"
 
     Scotty.get "/rooms" $ do
         views <- liftIO $ roomViews server
-        Scotty.html . renderHtml $ Views.rooms (serverConfig server) views
+        Scotty.html . renderHtml $ Views.rooms views
 
     Scotty.post "/rooms" $ do
         rid <- getParam "id"
         rpw <- getParam "password"
         _   <- liftIO $ createRoom server rid rpw
         Scotty.redirect $ TL.fromStrict $
-            BaseUrl.render (Config.cBaseUrl $ serverConfig server) <>
             "/rooms/" <> unRoomId rid <>
             case rpw of
                 NoRoomPassword -> ""
@@ -179,12 +170,12 @@ scottyApp server = Scotty.scottyApp $ do
                 liftIO $ print mbGiven
                 case mbGiven of
                     Just given | given == actual ->
-                        Scotty.html . renderHtml $ Views.client (serverConfig server) ridt $ Just actual
+                        Scotty.html . renderHtml $ Views.client ridt $ Just actual
                     _ -> do
                         Scotty.status HttpStatus.unauthorized401
                         Scotty.setHeader "WWW-Authenticate" "Basic realm=\"Provide password, user is ignored\", charset=\"UTF-8\""
             NoRoomPassword ->
-                Scotty.html . renderHtml $ Views.client (serverConfig server) ridt Nothing
+                Scotty.html . renderHtml $ Views.client ridt Nothing
 
     Scotty.get "/assets/client.js" $ do
         Scotty.setHeader "Content-Type" "application/JavaScript"
@@ -200,8 +191,8 @@ parsePendingConnection pending =
         (pathPart, queryPart) = second (B.drop 1) $ BC.break (== '?') path
         pwd = fmap T.decodeUtf8 .
             lookup "password" $ HttpUri.parseSimpleQuery queryPart in
-    case BaseUrl.parse (T.decodeUtf8 pathPart) of
-        BaseUrl.BaseUrl ["rooms", txt, "events"] | Right r <- parseRoomId txt ->
+    case filter (not . T.null) . T.split (== '/') $ T.decodeUtf8 pathPart of
+        ["rooms", txt, "events"] | Right r <- parseRoomId txt ->
             Just (r, maybe NoRoomPassword RoomPassword pwd)
         _ -> Nothing
 
@@ -303,29 +294,16 @@ wsApp server pc = case parsePendingConnection pc of
                 serverLogger server $ "Could not decode client message: " <>
                     FL.toLogStr (show msg)
 
-baseUrl :: BaseUrl -> Wai.Middleware
-baseUrl base@(BaseUrl.BaseUrl prefix) application = \req ->
-    case L.stripPrefix prefix (Wai.pathInfo req) of
-        Nothing   -> application req
-        Just path -> application req
-            { Wai.pathInfo = path
-            , Wai.rawPathInfo = fromMaybe (Wai.rawPathInfo req) .
-                B.stripPrefix bs $ Wai.rawPathInfo req
-            }
-  where
-    bs = T.encodeUtf8 $ BaseUrl.render base
-
 main :: IO ()
 main = do
-    config <- Config.fromEnv
-    let settings = Warp.setPort (Config.cPort config) .
-            Warp.setHost (fromString $ Config.cHostname config) $
-            Warp.defaultSettings
+    host <- fromString <$> getEnv "UPLCG_HOSTNAME"
+    port <- read <$> getEnv "UPLCG_PORT"
+    let settings = Warp.setPort port $ Warp.setHost host Warp.defaultSettings
     timeCache <- FL.newTimeCache FL.simpleTimeFormat
     FL.withTimedFastLogger timeCache
             (FL.LogStderr FL.defaultBufSize) $ \tfl ->
         let fl s = tfl (\time -> FL.toLogStr time <> " " <> s <> "\n") in
-        withServer config fl $ \server -> do
+        withServer fl $ \server -> do
         sapp <- scottyApp server
-        Warp.runSettings settings $ baseUrl (Config.cBaseUrl config) $
+        Warp.runSettings settings $
             WaiWs.websocketsOr WS.defaultConnectionOptions (wsApp server) sapp

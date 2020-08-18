@@ -17,9 +17,7 @@ Library
   Other-modules:    Paths_uplcg
 
   Exposed-modules:
-    Uplcg.BaseUrl
     Uplcg.CookieSocket
-    Uplcg.Config
     Uplcg.Game
     Uplcg.Main.GenerateElmTypes
     Uplcg.Main.Server

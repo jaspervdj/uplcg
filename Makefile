@@ -21,7 +21,6 @@ server: build
 	(cd server && \
 	    UPLCG_HOSTNAME=$(UPLCG_HOSTNAME) \
 	    UPLCG_PORT=$(UPLCG_PORT) \
-	    UPLCG_BASE=$(UPLCG_BASE) \
 	    stack exec uplcg-server)
 
 .PHONY: stack_build
