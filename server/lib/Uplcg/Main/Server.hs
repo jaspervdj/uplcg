@@ -167,7 +167,6 @@ scottyApp server = Scotty.scottyApp $ do
         case roomPassword room of
             RoomPassword actual -> do
                 mbGiven <- getPassword
-                liftIO $ print mbGiven
                 case mbGiven of
                     Just given | given == actual ->
                         Scotty.html . renderHtml $ Views.client ridt $ Just actual
