@@ -13,7 +13,7 @@ mutability
 type theory
 pointers
 a proof left as an exercise to the reader
-the independence of depedent types 
+the independence of dependent types 
 100 pages of proof appendix 
 the Vim vs Emacs dilemma
 the fear of side effects 
@@ -83,7 +83,6 @@ Ranjit's Lambda Style
 # https://github.com/CardsAgainstCryptography/CAC/blob/master/src/white.txt
 # Filtered down to remove some sexism / racism / ... and irrelevant cards.
 100% talks, 0% human interaction
-16-bit AES
 Thinking I'm so clever for using pictures of Alice (Cooper) and Bob (Marley)
 a career-limiting card game
 a hand wavy argument
