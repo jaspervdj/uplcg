@@ -28,7 +28,11 @@ template title body = H.docTypeHtml $ do
         H.meta H.! A.name "viewport" H.! A.content "width=device-width"
     H.body $ do
         body
-        H.footer $ "Untitled PL Card Game version " <> H.toHtml version
+        H.footer $ do
+            H.a H.! A.href "https://github.com/jaspervdj/uplcg" $
+                "Untitled PL Card Game"
+            " version "
+            H.toHtml version
 
 rooms :: [RoomView] -> [Deck] -> H.Html
 rooms rids decks = template "Untitled PL Card Game" $
