@@ -8,8 +8,7 @@ STACK_BIN=$(shell cd server && stack path --local-install-root)/bin
 .PHONY: build
 build: server/assets/client.js \
 	server/assets/style.css \
-	server/assets/black.txt \
-	server/assets/white.txt
+	server/assets/cards.yaml
 
 .PHONY: docker
 docker:
@@ -37,8 +36,5 @@ server/assets/client.js: $(ELM_MESSAGES_SOURCE) $(ELM_SOURCES)
 server/assets/style.css: client/style.css
 	cp $< $@
 
-server/assets/black.txt: black.txt
-	cp $< $@
-
-server/assets/white.txt: white.txt
+server/assets/cards.yaml: cards.yaml
 	cp $< $@

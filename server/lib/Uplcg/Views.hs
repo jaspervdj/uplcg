@@ -13,6 +13,7 @@ import qualified Data.Text.Encoding           as T
 import qualified Network.HTTP.Types.URI       as HttpUri
 import qualified Text.Blaze.Html5             as H
 import qualified Text.Blaze.Html5.Attributes  as A
+import           Uplcg.Cards
 import           Uplcg.Version                (version)
 
 data RoomView = RoomView Text Bool Int
@@ -29,8 +30,8 @@ template title body = H.docTypeHtml $ do
         body
         H.footer $ "Untitled PL Card Game version " <> H.toHtml version
 
-rooms :: [RoomView] -> H.Html
-rooms rids = template "Untitled PL Card Game" $
+rooms :: [RoomView] -> [Deck] -> H.Html
+rooms rids decks = template "Untitled PL Card Game" $
     H.div H.! A.class_ "rooms" $ do
         H.h1 "Rooms"
         if null rids
@@ -51,6 +52,10 @@ rooms rids = template "Untitled PL Card Game" $
             H.br
             H.label H.! A.for "name" $ "Password (optional): "
             H.input H.! A.type_ "text" H.! A.name "password"
+            H.br
+            H.label H.! A.for "deck" $ "Cards: "
+            H.select H.! A.name "deck" $ for_ decks $ \deck ->
+                H.option H.! A.value (H.toValue deck) $ H.toHtml deck
             H.br
             H.input H.! A.type_ "submit" H.! A.value "Create room"
 

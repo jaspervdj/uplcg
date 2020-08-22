@@ -25,10 +25,8 @@ import           Data.Maybe                      (isNothing)
 import           Data.String                     (fromString)
 import qualified Data.Text                       as T
 import qualified Data.Text.Encoding              as T
-import qualified Data.Text.IO                    as T
 import qualified Data.Text.Lazy                  as TL
 import           Data.Traversable                (for)
-import qualified Data.Vector                     as V
 import qualified Network.HTTP.Types.Status       as HttpStatus
 import qualified Network.HTTP.Types.URI          as HttpUri
 import qualified Network.Wai                     as Wai
@@ -40,6 +38,7 @@ import           System.Environment              (getEnv)
 import qualified System.Log.FastLogger           as FL
 import           System.Random                   (StdGen, newStdGen)
 import           Text.Blaze.Html.Renderer.Text   (renderHtml)
+import           Uplcg.Cards
 import qualified Uplcg.CookieSocket              as CookieSocket
 import           Uplcg.Game
 import           Uplcg.Messages
@@ -63,21 +62,15 @@ data Room = Room
 data Server = Server
     { serverLogger       :: FL.FastLogger
     , serverCookieSocket :: CookieSocket.Handle Player
-    , serverCards        :: Cards
+    , serverCards        :: CardSets
     , serverRooms        :: MVar (HMS.HashMap RoomId Room)
     }
 
-readCards :: IO Cards
-readCards = Cards
-    <$> fmap parseCards (T.readFile "assets/black.txt")
-    <*> fmap parseCards (T.readFile "assets/white.txt")
-  where
-    parseCards  = V.fromList . filter (not . T.null) . map dropComment . T.lines
-    dropComment = T.strip . fst . T.break (== '#')
-
 withServer :: FL.FastLogger -> (Server -> IO a) -> IO a
-withServer fl f = CookieSocket.withHandle 5 $ \cs -> do
-    f =<< Server fl cs <$> readCards <*> MVar.newMVar HMS.empty
+withServer fl f = CookieSocket.withHandle 5 $ \cs ->
+    f =<< Server fl cs
+        <$> loadCardSets "assets/cards.yaml"
+        <*> MVar.newMVar HMS.empty
 
 newRoom :: RoomId -> RoomPassword -> Cards -> StdGen -> STM Room
 newRoom rid rpw cards gen = Room rid rpw
@@ -148,12 +141,14 @@ scottyApp server = Scotty.scottyApp $ do
 
     Scotty.get "/rooms" $ do
         views <- liftIO $ roomViews server
-        Scotty.html . renderHtml $ Views.rooms views
+        let decks = HMS.keys $ serverCards server
+        Scotty.html . renderHtml $ Views.rooms views decks
 
     Scotty.post "/rooms" $ do
-        rid <- getParam "id"
-        rpw <- getParam "password"
-        _   <- liftIO $ createRoom server rid rpw
+        rid   <- getParam "id"
+        rpw   <- getParam "password"
+        cards <- getParam "deck"
+        _     <- liftIO $ createRoom server rid rpw cards
         Scotty.redirect $ TL.fromStrict $
             "/rooms/" <> unRoomId rid <>
             case rpw of
@@ -195,17 +190,21 @@ parsePendingConnection pending =
             Just (r, maybe NoRoomPassword RoomPassword pwd)
         _ -> Nothing
 
-createRoom :: Server -> RoomId -> RoomPassword -> IO Room
-createRoom server rid rpw = MVar.modifyMVar (serverRooms server) $ \rooms ->
-    case HMS.lookup rid rooms of
-        Just _ -> fail "Room already exists"
-        Nothing -> do
-            gen <- newStdGen
-            serverLogger server $ "[" <> FL.toLogStr rid <> "] Created " <>
-                (if rpw == NoRoomPassword then "" else "password-protected ") <>
-                "room"
-            room <- atomically $ newRoom rid rpw (serverCards server) gen
-            pure (HMS.insert rid room rooms, room)
+createRoom :: Server -> RoomId -> RoomPassword -> Deck -> IO Room
+createRoom server rid rpw deck = do
+    cards <- maybe (fail "Deck not found") pure $
+        HMS.lookup deck (serverCards server)
+    MVar.modifyMVar (serverRooms server) $ \rooms -> do
+        case HMS.lookup rid rooms of
+            Just _ -> fail "Room already exists"
+            Nothing -> pure ()
+
+        gen <- newStdGen
+        serverLogger server $ "[" <> FL.toLogStr rid <> "] Created " <>
+            (if rpw == NoRoomPassword then "" else "password-protected ") <>
+            "room"
+        room <- atomically $ newRoom rid rpw cards gen
+        pure (HMS.insert rid room rooms, room)
 
 getRoom :: Server -> RoomId -> IO Room
 getRoom server rid = do

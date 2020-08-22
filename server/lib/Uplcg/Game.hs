@@ -157,7 +157,7 @@ leaveGame pid game = case game ^? gamePlayers . ix pid of
 
 blackCardBlanks :: Cards -> BlackCard -> Int
 blackCardBlanks cards (BlackCard c) =
-    maybe 0 (length . T.breakOnAll "\\BLANK") $ cardsBlack cards V.!? c
+    maybe 0 (length . T.breakOnAll "_") $ cardsBlack cards V.!? c
 
 maximaOn :: Ord o => (a -> o) -> [a] -> [a]
 maximaOn f = \case [] -> []; x : xs -> go [x] (f x) xs

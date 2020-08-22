@@ -238,7 +238,7 @@ intersperseWith values def list = case list of
 
 blackCardContent : Cards -> BlackCard -> List String
 blackCardContent cards (Messages.BlackCard idx) =
-    String.split "\\BLANK" <| Maybe.withDefault "" <| Array.get idx cards.black
+    String.split "_" <| Maybe.withDefault "" <| Array.get idx cards.black
 
 blackCardBlanks : Cards -> BlackCard -> Int
 blackCardBlanks cards c = List.length (blackCardContent cards c) - 1
