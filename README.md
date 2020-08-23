@@ -1,5 +1,9 @@
 # Untitled PL Card Game
 
+## Adding cards
+
+You can edit the cards in [cards.yaml](cards.yaml).
+
 ## Event Info
 
 Untitled PL Card Game is a game heavily inspired by [Cards Against Humanity],
