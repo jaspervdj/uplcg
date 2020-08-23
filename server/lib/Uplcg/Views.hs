@@ -34,8 +34,8 @@ template title body = H.docTypeHtml $ do
             " version "
             H.toHtml version
 
-rooms :: [RoomView] -> [Deck] -> H.Html
-rooms rids decks = template "Untitled PL Card Game" $
+rooms :: [RoomView] -> [Deck] -> Maybe String -> H.Html
+rooms rids decks mbError = template "Untitled PL Card Game" $
     H.div H.! A.class_ "rooms" $ do
         H.h1 "Rooms"
         if null rids
@@ -50,14 +50,17 @@ rooms rids decks = template "Untitled PL Card Game" $
 
         H.br
         H.h1 "Create Room"
+        case mbError of
+            Nothing -> mempty
+            Just err -> H.p H.! A.class_ "error" $ H.toHtml err
         H.form H.! A.method "POST" H.! A.action "/rooms" $ do
-            H.label H.! A.for "name" $ "Room name: "
+            H.label H.! A.for "name" $ "Room identifier (alphanumeric only): "
             H.input H.! A.type_ "text" H.! A.name "id"
             H.br
             H.label H.! A.for "name" $ "Password (optional): "
             H.input H.! A.type_ "text" H.! A.name "password"
             H.br
-            H.label H.! A.for "deck" $ "Cards: "
+            H.label H.! A.for "deck" $ "Card set to use: "
             H.select H.! A.name "deck" $ for_ decks $ \deck ->
                 H.option H.! A.value (H.toValue deck) $ H.toHtml deck
             H.br

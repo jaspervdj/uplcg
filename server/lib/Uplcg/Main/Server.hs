@@ -29,6 +29,7 @@ import qualified Data.Text.Lazy                  as TL
 import           Data.Traversable                (for)
 import qualified Network.HTTP.Types.Status       as HttpStatus
 import qualified Network.HTTP.Types.URI          as HttpUri
+import qualified Network.HTTP.Types.Method as HttpMethod
 import qualified Network.Wai                     as Wai
 import qualified Network.Wai.Handler.Warp        as Warp
 import qualified Network.Wai.Handler.WebSockets  as WaiWs
@@ -79,9 +80,9 @@ newRoom rid rpw cards gen = Room rid rpw
 
 parseRoomId :: T.Text -> Either String RoomId
 parseRoomId txt
-    | not (T.all isAlphaNum txt) = Left "RoomId: alphanum characters only"
-    | l < 6                      = Left "RoomId: minimum length of 6"
-    | l > 32                     = Left "RoomId: maximum length of 32"
+    | not (T.all isAlphaNum txt) = Left "please use alphanum characters only"
+    | l < 1                      = Left "minimum length of 1"
+    | l > 32                     = Left "maximum length of 32"
     | otherwise                  = Right $ RoomId txt
   where
     l = T.length txt
@@ -139,22 +140,33 @@ scottyApp :: Server -> IO Wai.Application
 scottyApp server = Scotty.scottyApp $ do
     Scotty.get "/" $ Scotty.redirect $ "/rooms"
 
-    Scotty.get "/rooms" $ do
+    Scotty.matchAny "/rooms" $ do
         views <- liftIO $ roomViews server
         let decks = HMS.keys $ serverCards server
-        Scotty.html . renderHtml $ Views.rooms views decks
 
-    Scotty.post "/rooms" $ do
-        rid   <- getParam "id"
-        rpw   <- getParam "password"
-        cards <- getParam "deck"
-        _     <- liftIO $ createRoom server rid rpw cards
-        Scotty.redirect $ TL.fromStrict $
-            "/rooms/" <> unRoomId rid <>
-            case rpw of
-                NoRoomPassword -> ""
-                RoomPassword pwd -> T.decodeUtf8 $ HttpUri.renderQuery True
-                    [("password", Just $ T.encodeUtf8 pwd)]
+        method <- Wai.requestMethod <$> Scotty.request
+        mbCreatedRoom <- if method == HttpMethod.methodPost
+            then flip Scotty.rescue (pure . Just . Left) $ do
+                rid   <- getParam "id"
+                rpw   <- getParam "password"
+                cards <- getParam "deck"
+                liftIO $ Just . Right <$> createRoom server rid rpw cards
+            else do
+                pure Nothing
+
+        case mbCreatedRoom of
+            Nothing -> do
+                Scotty.html . renderHtml $ Views.rooms views decks Nothing
+            Just (Left err) -> do
+                Scotty.status HttpStatus.badRequest400
+                Scotty.html . renderHtml . Views.rooms views decks .
+                    Just $ TL.unpack err
+            Just (Right r) -> Scotty.redirect $ TL.fromStrict $
+                "/rooms/" <> unRoomId (roomId r) <>
+                case roomPassword r of
+                    NoRoomPassword -> ""
+                    RoomPassword pwd -> T.decodeUtf8 $ HttpUri.renderQuery True
+                        [("password", Just $ T.encodeUtf8 pwd)]
 
     Scotty.get "/rooms/:id" $ do
         rid@(RoomId ridt) <- getParam "id"

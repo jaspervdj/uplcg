@@ -125,6 +125,11 @@ button, input {
   text-align: left;
 }
 
+.error {
+  color: #d00;
+  font-weight: bold;
+}
+
 footer {
   font-size: 12px;
   margin: 60px auto 60px auto;
