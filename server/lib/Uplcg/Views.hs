@@ -23,7 +23,7 @@ template title body = H.docTypeHtml $ do
     H.head $ do
         H.meta H.! A.charset "UTF-8"
         H.link H.! A.rel "stylesheet" H.! A.type_ "text/css"
-            H.! A.href "/assets/style.css"
+            H.! A.href "/assets/style.css?v=1"
         H.title $ H.toHtml title
         H.meta H.! A.name "viewport" H.! A.content "width=device-width"
     H.body $ do
