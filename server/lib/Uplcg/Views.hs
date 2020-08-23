@@ -8,6 +8,8 @@ module Uplcg.Views
 import           Control.Monad                (when)
 import qualified Data.ByteString.Lazy.Builder as BLB
 import           Data.Foldable                (for_)
+import           Data.List                    (sortBy)
+import           Data.Ord                     (comparing)
 import           Data.Text                    (Text)
 import qualified Data.Text.Encoding           as T
 import qualified Network.HTTP.Types.URI       as HttpUri
@@ -35,12 +37,12 @@ template title body = H.docTypeHtml $ do
             H.toHtml version
 
 rooms :: [RoomView] -> [Deck] -> Maybe String -> H.Html
-rooms rids decks mbError = template "Untitled PL Card Game" $
+rooms rooms0 decks mbError = template "Untitled PL Card Game" $
     H.div H.! A.class_ "rooms" $ do
         H.h1 "Rooms"
-        if null rids
+        if null rooms0
             then H.p "No rooms online."
-            else H.ul $ for_ rids $ \(RoomView rid lock num) -> H.li $ do
+            else H.ul $ for_ rooms1 $ \(RoomView rid lock num) -> H.li $ do
                 H.a H.! A.href (H.toValue $ "/rooms/" <> rid) $
                     H.toHtml rid
                 when lock  " 🔒"
@@ -51,7 +53,7 @@ rooms rids decks mbError = template "Untitled PL Card Game" $
         H.br
         H.h1 "Create Room"
         case mbError of
-            Nothing -> mempty
+            Nothing  -> mempty
             Just err -> H.p H.! A.class_ "error" $ H.toHtml err
         H.form H.! A.method "POST" H.! A.action "/rooms" $ do
             H.label H.! A.for "name" $ "Room identifier (alphanumeric only): "
@@ -65,6 +67,8 @@ rooms rids decks mbError = template "Untitled PL Card Game" $
                 H.option H.! A.value (H.toValue deck) $ H.toHtml deck
             H.br
             H.input H.! A.type_ "submit" H.! A.value "Create room"
+  where
+    rooms1 = sortBy (comparing (\(RoomView rid _ _) -> rid)) rooms0
 
 client :: Text -> Maybe Text -> H.Html
 client roomId mbPassword = template "Untitled PL Card Game" $ do
