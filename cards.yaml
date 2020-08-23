@@ -53,6 +53,11 @@ icfp2020:
     - When all this is over, I'm not looking forward to _.
     - What's a programmer's best friend? _
     - What's my secret power? _
+    - _ for free!
+    - _ considered harmful.
+    - _ is a path to many abilities many consider... unnatural
+    - A monadic approach to _.
+
 
     # CaH with minor edits
     - _ + _ = _
@@ -62,6 +67,22 @@ icfp2020:
     - I got 99 problems but _ ain’t one.
 
   white:
+    - adding inconsistent axioms to Agda (again)
+    - an angry type theorist
+    - non-SIGPLAN conferences
+    - full abstraction 
+    - installing Agda for its input mode
+    - presheaves
+    - a definitional interpreter in Common Lisp
+    - a self-promotional comment phrased as a question
+    - just a corollary of the foundamental theorem
+    - Agda's failure in unifying the terms
+    - theorems for free 
+    - using the acmart class
+    - the later modality
+    - writing code with paper and pencil 
+    - progress and preservation
+    - going to the bathroom for the second time in 5 minutes to avoid an awkward conversation
     # ICFP2020 Cards
     - a Monad
     - a Monoid
@@ -130,12 +151,14 @@ icfp2020:
     - do be do be do
     - the marriage of effects and monads
     - Coq Coq Correct!
-    # - gradual typing is dead
+    - theorems for free!
+    - gradual typing is dead
 
     # Cards including comminity people's names that we should ask for permission
     - Conor's high tech presentation
     - an ICFP with 0 SPJ accepted papers
     - Ranjit's Lambda Style
+    # - Frank Pfenning's proof theory
     # - Asking Annabelle
     # - HIcks
     # - a climate change talk by Benjamin Pierce
@@ -229,6 +252,6 @@ icfp2020:
     - wistfully looking out of the window of my overly-cramped PhD office
     - writing a reference for someone I can't remember meeting
     - Ctrl+F'ing to see how many times I'm cited and finding "0 results"
-    - '"Working" remotely'
+    - '"working" remotely'
     - a slide deck entirely in Comic Sans
     - a shepherd that won't budge
