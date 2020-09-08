@@ -1,16 +1,42 @@
+generic:
+  enabled: false
+  black:
+    - _ and _. A match made in heaven.
+    - _ is just a special case of _.
+    - "_: Hours of fun. Easy to use. Perfect for _!"
+    - I can't believe I got away with _.
+    - I can't concentrate without _.
+    - I drink to forget _.
+    - I get by with a little help from _.
+    - I got 99 problems but _ ain't one.
+    - I hope no one finds out about _.
+    - I woke up drenched in sweat from a nightmare about _.
+    - I woke up filled with shame about _.
+    - Remembering _, then immediately vomiting.
+    - When I am President of the United States, I will create the Department of _.
+    - _ kept me up all night.
+    - _ is a path to many abilities many consider... unnatural
+    - _ + _ = _
+    - "Step 1: _.  Step 2: _.  Step 3: Profit."
+    - _ is a slippery slope that leads to _.
+    - "_ & _: The Musical."
+  white:
+    - a career-limiting card game
+    - day drinking
+
 icfp2020:
+  include:
+    - generic
+
   black:
     # ICFP2020 Cards
     - _ is just _ in the Category of _.
     - My next paper title? The next 700 _.
     - Procrastinating on my paper by working on _.
-    - _ and _. A match made in heaven.
     - Without _ we wouldn't have _.
     - Reviewer 2 found my paper guilty of _.
-    - _ is just a special case of _.
     - Listen, if you want to get involved with _, just stay clear of _.
     - _ would be woefully incomplete without _.
-    - "_: Hours of fun. Easy to use. Perfect for _!"
 
     # Some cards taken from:
     # https://github.com/CardsAgainstCryptography/CAC/blob/master/src/white.txt
@@ -21,21 +47,13 @@ icfp2020:
     - Did you hear that _ is the new hot topic?
     - Due to the Covid crisis, I have rekindled my enthusiasm for _.
     - I always include _ in my reviewer feedback.
-    - I can't believe I got away with _.
     - I can't believe my grant application for _ was denied!
-    - I can't concentrate without _.
-    - I drink to forget _.
     - I find that _ relieves pre-submission stress.
-    - I get by with a little help from _.
-    - I got 99 problems but _ ain't one.
-    - I hope no one finds out about _.
     - I just got out of an incomprehensible talk on _ and _.
     - I just hope the reviewers don't notice _.
     - I only got through my PhD because of a long-winded explanation of _.
     - I think I will skip the session on _ this year.
     - I was surprised to get no questions about _ the end of my presentation on _.
-    - I woke up drenched in sweat from a nightmare about _.
-    - I woke up filled with shame about _.
     - I'm hoping to avoid 2/3 of the program committee, because my paper is on _.
     - I'm sorry, Professor, but I couldn't complete my homework because of _.
     - My academic CV says I'm an expert on _.
@@ -43,28 +61,15 @@ icfp2020:
     - My favourite thing about online conferences is _.
     - One regret I have from my PhD is _.
     - Putting _ in my application helped me immensely.
-    - Remembering _, then immediately vomiting.
     - Self-isolation is fantastic for _.
     - The next big thing will almost certainly be _.
     - The talk that had the most influence on my personal life was _.
-    - When I am President of the United States, I will create the Department of _.
-    - Why can't I sleep at night? _
-    - _ kept me up all night.
     - When all this is over, I'm not looking forward to _.
     - What's a programmer's best friend? _
     - What's my secret power? _
     - _ for free!
     - _ considered harmful.
-    - _ is a path to many abilities many consider... unnatural
     - A monadic approach to _.
-
-
-    # CaH with minor edits
-    - _ + _ = _
-    - "Step 1: _.  Step 2: _.  Step 3: Profit."
-    - _ is a slippery slope that leads to _.
-    - "_ & _: The Musical."
-    - I got 99 problems but _ ain’t one.
 
   white:
     - adding inconsistent axioms to Agda (again)
@@ -172,7 +177,6 @@ icfp2020:
     # Filtered down to remove some sexism / racism / ... and irrelevant cards.
     - 100% talks, 0% human interaction
     - Thinking I'm so clever for using pictures of Alice (Cooper) and Bob (Marley)
-    - a career-limiting card game
     - a hand wavy argument
     - a proof that appears in the "full version"
     - a violent and bloody PhD defence
@@ -187,12 +191,10 @@ icfp2020:
     - citing personal communication
     - conferences with 5 submissions at 11:59pm
     - crippling student debt
-    - day drinking
     - deadline day flatulence
     - deliberately hiding inefficiencies inside the big O
     - deliberately not referencing a superior paper
     - doing Facebook maths puzzles to show I am better than those idiot 97%
-    - drinking alone
     - explaining what my job is at a family reunion
     - falling asleep in a 5-person meeting
     - feeling flattered because a conference spam email addressed me as Professor
@@ -257,6 +259,9 @@ icfp2020:
     - a shepherd that won't budge
 
 munihac2020:
+  include:
+    - generic
+
   black:
     - My Hackathon project will be _.
     - This Hackathon I will work on integrating _ and _.
