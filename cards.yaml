@@ -268,7 +268,7 @@ munihac2020:
     - a 9 year old GHC ticket
     - Darcs
     - a hangover
-    - GHC: out of memory
+    - 'GHC: out of memory'
     - complaining about compile times
     - unsafePerformIO
     - unsafeInterleaveIO
