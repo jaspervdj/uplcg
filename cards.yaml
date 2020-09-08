@@ -255,3 +255,34 @@ icfp2020:
     - '"working" remotely'
     - a slide deck entirely in Comic Sans
     - a shepherd that won't budge
+
+munihac2020:
+  black:
+    - My Hackathon project will be _.
+    - This Hackathon I will work on integrating _ and _.
+
+  white:
+    - Edward Kmett's hallway track
+    - Spending the first two days trying to get the project to build
+    - 1253 dependencies
+    - a 9 year old GHC ticket
+    - Darcs
+    - a hangover
+    - GHC: out of memory
+    - complaining about compile times
+    - unsafePerformIO
+    - unsafeInterleaveIO
+    - a monad tutorial
+    - sneakily writing JavaScript
+    - broken builds
+    - weird behaviour on Mac OS X
+    - lens
+    - not writing any documentation
+    - lazy IO
+    - pretending to understand what a Monad is
+    - Haskell2030
+    - a Template Haskell splice that steals firefox cookies at compile time
+    - using Hugs in production in 2020
+    - attending MuniHac mostly for the beer
+    - actually finishing a Hackathon project
+    - the 8th coffee of the day
