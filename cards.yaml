@@ -20,22 +20,39 @@ generic:
     - "Step 1: _.  Step 2: _.  Step 3: Profit."
     - _ is a slippery slope that leads to _.
     - "_ & _: The Musical."
+    - Without _ we wouldn't have _.
+    - Listen, if you want to get involved with _, just stay clear of _.
+    - Did you hear that _ is the new hot topic?
   white:
     - a career-limiting card game
     - day drinking
+    - sending an email at 11pm so people think I work hard
+    - someone less senior than me signing off with "Thanks in advance"
+
+covid19:
+  enabled: false
+  black:
+    - Due to the Covid crisis, I have rekindled my enthusiasm for _.
+    - My favourite thing about online conferences is _.
+    - When all this is over, I'm not looking forward to _.
+  white:
+    - not having to wear pants
+    - the sound of 50 people on a Zoom call all trying to speak at once
+    - '"working" remotely'
+    - remembering when "working from home" meant a day off
+    - Zoom dropping out every 10 to 15 seconds
 
 icfp2020:
   include:
     - generic
+    - covid19
 
   black:
     # ICFP2020 Cards
     - _ is just _ in the Category of _.
     - My next paper title? The next 700 _.
     - Procrastinating on my paper by working on _.
-    - Without _ we wouldn't have _.
     - Reviewer 2 found my paper guilty of _.
-    - Listen, if you want to get involved with _, just stay clear of _.
     - _ would be woefully incomplete without _.
 
     # Some cards taken from:
@@ -44,8 +61,6 @@ icfp2020:
     # with the uplcg format.  Added more _s to a few because we can.
     - A PL conference is never complete without _.
     - Both Microsoft and Apple have concerns with _.
-    - Did you hear that _ is the new hot topic?
-    - Due to the Covid crisis, I have rekindled my enthusiasm for _.
     - I always include _ in my reviewer feedback.
     - I can't believe my grant application for _ was denied!
     - I find that _ relieves pre-submission stress.
@@ -58,13 +73,11 @@ icfp2020:
     - I'm sorry, Professor, but I couldn't complete my homework because of _.
     - My academic CV says I'm an expert on _.
     - My career started with _.
-    - My favourite thing about online conferences is _.
     - One regret I have from my PhD is _.
     - Putting _ in my application helped me immensely.
     - Self-isolation is fantastic for _.
     - The next big thing will almost certainly be _.
     - The talk that had the most influence on my personal life was _.
-    - When all this is over, I'm not looking forward to _.
     - What's a programmer's best friend? _
     - What's my secret power? _
     - _ for free!
@@ -215,7 +228,6 @@ icfp2020:
     - my successful career at a patent troll company
     - my supervisor's morning breath
     - not feeling guilty about falling asleep during the keynote
-    - not having to wear pants
     - not needing to pretend to listen to the other speakers in my session
     - overselling it hard in the introduction
     - politely starting an answer with "That's a good question...", when the question is actually idiotic
@@ -225,11 +237,7 @@ icfp2020:
     - putting an outdoors-y photo on my academic webpage to look well-rounded
     - quickly trying to peek at someone's badge as I shake their hand, but it's flipped backwards
     - relatives who ask me to help them install their printer on Windows
-    - remembering when "working from home" meant a day off
-    - sending an email at 11pm so people think I work hard
-    - Zoom dropping out every 10 to 15 seconds
     - social sciences
-    - someone less senior than me signing off with "Thanks in advance"
     - starting a conversation with "When did you fly in?", because I have nothing interesting to say
     - telling anyone who'll listen quite how busy I am
     - thanking the anonymous reviewers for their "useful" comments
@@ -239,7 +247,6 @@ icfp2020:
     - the intoxicating aroma of 12 PhD students in one office
     - the one suit I own for meetings with industry
     - the person in the front row taking photos of every slide
-    - the sound of 50 people on a Zoom call all trying to speak at once
     - the student body
     - throwing a party for my next citation milestone
     - turning up to one meeting and claiming co-authorship
@@ -254,15 +261,17 @@ icfp2020:
     - wistfully looking out of the window of my overly-cramped PhD office
     - writing a reference for someone I can't remember meeting
     - Ctrl+F'ing to see how many times I'm cited and finding "0 results"
-    - '"working" remotely'
     - a slide deck entirely in Comic Sans
     - a shepherd that won't budge
 
 munihac2020:
   include:
     - generic
+    - covid19
 
   black:
+    - A Haskell Hackathon conference is never complete without _.
+    - _ is just _ in the Category of _.
     - My Hackathon project will be _.
     - This Hackathon I will work on integrating _ and _.
     - Hackathons are great because you can openly talk about _.
@@ -270,6 +279,15 @@ munihac2020:
     - My project was sponsored by _ and _.
     - 'GHC proposal 2354: _.'
     - '{-# LANGUAGE _ #-}'
+    - Both Microsoft and Apple have concerns with _.
+    - I just got out of an incomprehensible talk on _ and _.
+    - My career started with _.
+    - I'm sorry, Professor, but I couldn't complete my homework because of _.
+    - What's a programmer's best friend? _
+    - What's my secret power? _
+    - _ for free!
+    - _ considered harmful.
+    - A monadic approach to _.
 
   white:
     - Edward Kmett's hallway track
@@ -297,3 +315,74 @@ munihac2020:
     - actually finishing a Hackathon project
     - the 8th coffee of the day
     - zygohistomorphic prepromorphisms
+
+    # Adaptions from icfp2020
+    - adding inconsistent axioms to Agda (again)
+    - an angry type theorist
+    - writing code with paper and pencil
+    - a Monad
+    - a Monoid
+    - Endofunctors
+    - JavaScript
+    - Haskell
+    - Scheme
+    - Racket
+    - C
+    - C++
+    - abstract nonsense
+    - mutability
+    - type theory
+    - pointers
+    - a proof left as an exercise to the reader
+    - going to the bathroom for the second time in 5 minutes to avoid an awkward conversation
+    - a self-promotional comment phrased as a question
+    - the Vim vs Emacs dilemma
+    - the fear of side effects
+    - error reporting
+    - readable type errors
+    - monads are like burritos
+    - the lambdaman
+    - a presentation without a joke
+    - Category Theory
+    - a type system that prevents planes from crashing
+    - a time when ML did not mean machine learning
+    - well-typed programs don't go wrong
+    - a complete type system
+    - division by zero
+    - a profile picture from 20 years ago
+    - an academic website powered by Hakyll
+    - continuations
+    - liberally adding axioms
+    - unironically using Windows
+    - PL memes
+    - not really caring about OOP
+    - endless discussions about syntax
+    - 100% talks, 0% human interaction
+    - actually being "sorry for the late reply"
+    - an overfull hbox
+    - deliberately hiding inefficiencies inside the big O
+    - doing Facebook maths puzzles to show I am better than those idiot 97%
+    - explaining what my job is at a family reunion
+    - falling asleep in a 5-person meeting
+    - frantically taking notes during every talk
+    - getting a fourth cookie during a coffee break because I have no one to talk to
+    - getting stuck in the French-speaking group
+    - having time to catch up on my reading, then not doing it
+    - hiding my conflict of interest
+    - including an XKCD comic in my slides because I'm so original
+    - my successful career at a patent troll company
+    - not feeling guilty about falling asleep during the keynote
+    - not needing to pretend to listen to the other speakers in my session
+    - overselling it hard on twitter
+    - politely starting an answer with "That's a good question...", when the question is actually idiotic
+    - putting an outdoors-y photo on my nerdy webpage to look well-rounded
+    - quickly trying to peek at someone's badge as I shake their hand, but it's flipped backwards
+    - relatives who ask me to help them install their printer on Windows
+    - starting a conversation with "When did you fly in?", because I have nothing interesting to say
+    - telling anyone who'll listen quite how busy I am
+    - the awkward question the organizer asks when nobody understood the talk
+    - the awkward silence of 8 people standing in a circle during the afternoon coffee break
+    - the great paywall of IEEE
+    - using indecipherable, non-standard notation to hide a dodgy proof
+    - wearing a T-shirt with a Linux joke
+    - a slide deck entirely in Comic Sans
