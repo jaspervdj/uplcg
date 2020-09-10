@@ -265,6 +265,11 @@ munihac2020:
   black:
     - My Hackathon project will be _.
     - This Hackathon I will work on integrating _ and _.
+    - Hackathons are great because you can openly talk about _.
+    - I hate to go back to _ after a Hackathon.
+    - My project was sponsored by _ and _.
+    - 'GHC proposal 2354: _.'
+    - '{-# LANGUAGE _ #-}'
 
   white:
     - Edward Kmett's hallway track
@@ -291,3 +296,4 @@ munihac2020:
     - attending MuniHac mostly for the beer
     - actually finishing a Hackathon project
     - the 8th coffee of the day
+    - zygohistomorphic prepromorphisms
