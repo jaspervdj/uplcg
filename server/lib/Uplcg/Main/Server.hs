@@ -17,7 +17,7 @@ import           Data.Bifunctor                  (first, second)
 import qualified Data.ByteString                 as B
 import qualified Data.ByteString.Char8           as BC
 import qualified Data.ByteString.Lazy            as BL
-import           Data.Char                       (isAlphaNum)
+import           Data.Char                       (isAlphaNum, isAscii)
 import           Data.Foldable                   (for_)
 import           Data.Hashable                   (Hashable)
 import qualified Data.HashMap.Strict             as HMS
@@ -80,12 +80,13 @@ newRoom rid rpw cards gen = Room rid rpw
 
 parseRoomId :: T.Text -> Either String RoomId
 parseRoomId txt
-    | not (T.all isAlphaNum txt) = Left "please use alphanum characters only"
-    | l < 1                      = Left "minimum length of 1"
-    | l > 32                     = Left "maximum length of 32"
-    | otherwise                  = Right $ RoomId txt
+    | not (T.all valid txt) = Left "please use ASCII alphanum characters only"
+    | l < 1                 = Left "minimum length of 1"
+    | l > 32                = Left "maximum length of 32"
+    | otherwise             = Right $ RoomId txt
   where
     l = T.length txt
+    valid c = isAlphaNum c && isAscii c
 
 parseRoomPassword :: T.Text -> Either String RoomPassword
 parseRoomPassword txt
