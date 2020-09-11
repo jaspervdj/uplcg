@@ -19,7 +19,6 @@ module Uplcg.Game
     , gameViewForPlayer
     ) where
 
-import           Uplcg.Messages
 import           Control.Lens                 (Lens', at, iall, ifor_, imap, ix,
                                                orOf, to, (%%=), (%=), (%~), (&),
                                                (+=), (.=), (.~), (^.), (^..),
@@ -40,6 +39,7 @@ import qualified Data.Vector                  as V
 import qualified Data.Vector.Algorithms.Merge as V
 import           Data.Vector.Instances        ()
 import           System.Random                (StdGen)
+import           Uplcg.Messages
 import           VectorShuffling.Immutable    (shuffle)
 
 type PlayerId = Int
@@ -98,8 +98,22 @@ popCard getDeck mk queue = state $ \game -> case game ^. queue of
 popBlackCard :: State Game BlackCard
 popBlackCard = popCard cardsBlack BlackCard gameBlack
 
-popWhiteCard :: State Game WhiteCard
-popWhiteCard = popCard cardsWhite WhiteCard gameWhite
+-- | Draw N white cards, that can't be part of the current hand.  Use a maximum
+-- number of iterations as protection.
+popWhiteCards :: V.Vector WhiteCard -> Int -> State Game (V.Vector WhiteCard)
+popWhiteCards = go (10 :: Int)
+  where
+    go iters hand n
+        | iters <= 0 = V.replicateM n popWhiteCard
+        | n <= 0     = pure V.empty
+        | otherwise  = do
+            white <- popWhiteCard
+            if white `V.elem` hand
+                then go (iters - 1) hand n
+                else V.cons white <$> go (iters - 1) (V.cons white hand) (n - 1)
+
+    popWhiteCard :: State Game WhiteCard
+    popWhiteCard = popCard cardsWhite WhiteCard gameWhite
 
 newGame :: Cards -> StdGen -> Game
 newGame cards gen = flip execState state0 $ do
@@ -124,7 +138,7 @@ drawNewWhiteCards :: Game -> Game
 drawNewWhiteCards game = flip execState game $ do
     ifor_ (game ^. gamePlayers) $ \pid player -> do
         let num = defaultHandSize - V.length (player ^. playerHand)
-        new <- V.replicateM num popWhiteCard
+        new <- popWhiteCards (player ^. playerHand) num
         gamePlayers . ix pid . playerHand %= (<> new)
 
 assignAdmin :: Game -> Game
@@ -143,7 +157,7 @@ joinGame mbPlayer = runState $ do
         Nothing -> do
             pid <- gameNextPlayerId %%= (\x -> (x, x + 1))
             let name = "Player " <> T.pack (show pid)
-            hand <- V.replicateM defaultHandSize popWhiteCard
+            hand <- popWhiteCards V.empty defaultHandSize
             pure $ Player pid name hand False 0
         Just p -> pure $ p & playerAdmin .~ False
     gamePlayers %= HMS.insert (player ^. playerId) player
