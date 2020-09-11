@@ -265,6 +265,7 @@ icfp2020:
     - a shepherd that won't budge
 
 munihac2020:
+  default: true
   include:
     - generic
     - covid19

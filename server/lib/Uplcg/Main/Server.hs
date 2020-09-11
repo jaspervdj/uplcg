@@ -142,7 +142,7 @@ scottyApp server = Scotty.scottyApp $ do
 
     Scotty.matchAny "/rooms" $ do
         views <- liftIO $ roomViews server
-        let decks = HMS.keys $ serverCards server
+        let decks = serverCards server
 
         method <- Wai.requestMethod <$> Scotty.request
         mbCreatedRoom <- if method == HttpMethod.methodPost
@@ -205,7 +205,7 @@ parsePendingConnection pending =
 createRoom :: Server -> RoomId -> RoomPassword -> Deck -> IO Room
 createRoom server rid rpw deck = do
     cards <- maybe (fail "Deck not found") pure $
-        HMS.lookup deck (serverCards server)
+        HMS.lookup deck (csCards $ serverCards server)
     MVar.modifyMVar (serverRooms server) $ \rooms -> do
         case HMS.lookup rid rooms of
             Just _ -> fail "Room already exists"

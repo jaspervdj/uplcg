@@ -8,7 +8,8 @@ module Uplcg.Views
 import           Control.Monad                (when)
 import qualified Data.ByteString.Lazy.Builder as BLB
 import           Data.Foldable                (for_)
-import           Data.List                    (sortBy)
+import qualified Data.HashMap.Strict          as HMS
+import           Data.List                    (sort, sortBy)
 import           Data.Ord                     (comparing)
 import           Data.Text                    (Text)
 import qualified Data.Text.Encoding           as T
@@ -36,7 +37,7 @@ template title body = H.docTypeHtml $ do
             " version "
             H.toHtml version
 
-rooms :: [RoomView] -> [Deck] -> Maybe String -> H.Html
+rooms :: [RoomView] -> CardSets -> Maybe String -> H.Html
 rooms rooms0 decks mbError = template "Untitled PL Card Game" $
     H.div H.! A.class_ "rooms" $ do
         H.h1 "Rooms"
@@ -63,8 +64,15 @@ rooms rooms0 decks mbError = template "Untitled PL Card Game" $
             H.input H.! A.type_ "text" H.! A.name "password"
             H.br
             H.label H.! A.for "deck" $ "Card set to use: "
-            H.select H.! A.name "deck" $ for_ decks $ \deck ->
-                H.option H.! A.value (H.toValue deck) $ H.toHtml deck
+
+            let sorted = sort . HMS.keys $ csCards decks
+            H.select H.! A.name "deck" $ for_ sorted $ \deck ->
+                if Just deck == csDefault decks then
+                    H.option H.! A.value (H.toValue deck)
+                        H.! A.selected "selected" $ H.toHtml deck
+                else
+                    H.option H.! A.value (H.toValue deck) $ H.toHtml deck
+
             H.br
             H.input H.! A.type_ "submit" H.! A.value "Create room"
   where
