@@ -149,9 +149,15 @@ viewTable : GameState -> Html Msg
 viewTable game = case game.view.table of
     Messages.Proposing c my -> Html.div [] <|
         [ Html.p []
-            [ Html.text <| "Select " ++
-                pluralize (blackCardBlanks game.cards c) "card" "cards" ++
-                " from your hand"
+            [ Html.text <|
+                if List.length my > 0 then
+                    "Waiting for other players..."
+                else if List.length (selectedWhiteCards game) == blackCardBlanks game.cards c then
+                    "Click 'Propose' to submit your proposal."
+                else
+                    "Select " ++
+                    pluralize (blackCardBlanks game.cards c) "card" "cards" ++
+                    " from your hand."
             ]
         , blackCard [] game.cards c <| selectedWhiteCards game
         , Html.br [] []
@@ -171,7 +177,14 @@ viewTable game = case game.view.table of
                 [Html.text "Skip remaining players"]
             ]
     Messages.Voting black proposals myProposal myVote -> Html.div [] <|
-        [Html.p [] [Html.text <| "Vote for the funniest combination"]] ++
+        [ Html.p []
+            [ Html.text <| case myVote of
+                Just _ -> "Waiting for other players..."
+                Nothing -> case game.selectedVote of
+                    Nothing -> "Vote for the funniest combination."
+                    Just _ -> "Click 'Vote' to submit your vote."
+            ]
+        ] ++
         List.indexedMap (\i proposal ->
             let attrs =
                     if Just i == myProposal then
@@ -203,7 +216,7 @@ viewTable game = case game.view.table of
             ]
 
     Messages.Tally black results -> Html.div [] <|
-        [Html.p [] [Html.text "Vote results"]] ++
+        [Html.p [] [Html.text "Waiting for admin to start next round..."]] ++
         List.map (\voted ->
             if List.length voted.winners <= 0 then
                 blackCard [] game.cards black voted.proposal
