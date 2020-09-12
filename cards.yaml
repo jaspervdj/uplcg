@@ -391,3 +391,72 @@ munihac2020:
     - using indecipherable, non-standard notation to hide a dodgy proof
     - wearing a T-shirt with a Linux joke
     - a slide deck entirely in Comic Sans
+
+cspapers:
+  black:
+    - 'CS paper: _ is morally correct'
+    - 'CS paper: _ a la carte'
+    - 'CS paper: A quick look at _'
+    - 'CS paper: Compiling without _'
+    - 'CS paper: Scrap your _  A practical approach to _'
+    - 'CS paper: The history of _: being lazy with _'
+    - 'CS paper: Faster laziness using _'
+    - 'CS paper: Towards _ for Haskell'
+    - 'CS paper: Asynchronous _ in Haskell'
+    - 'CS paper: Sound and Decidable Type Inference for _'
+    - 'CS paper: A monadic framework for _'
+    - 'CS paper: Associated types for _'
+    - 'CS paper: _ for arbitrary-rank types'
+    - 'CS paper: practical type inference for _'
+    - 'CS paper: _: a fast evaluation strategy for _'
+    - 'CS paper: _: a retrospective on Haskell'
+    - 'CS paper: Lexically scoped _'
+    - 'CS paper: _ for Haskell'
+    - 'CS paper: Tackling the awkward squad: _ in Haskell'
+    - 'CS paper: Composing contracts: an adventure in _'
+    - 'CS paper: A Semantics for _'
+    - 'CS paper: Algorithm + Strategy = _'
+    - 'CS paper: Generational garbage collection for _'
+    - 'CS paper: A static semantics for _'
+    - 'CS paper: _ as first class citizens'
+    - 'CS paper: Arbitrary precision arithmetic using _'
+    - 'CS paper: _ using continued fractions'
+    - 'CS paper: An investigation of the relative efficiencies of _ and _'
+    - 'CS paper: Kind inference for _'
+    - 'CS paper: A role for dependent types in _'
+    - 'CS paper: Type variables in _'
+    - 'CS paper: Safe, zero-cost coercions for _'
+    - 'CS paper: A reflection on _'
+
+  white:
+    - fast and loose reasoning
+    - build systems
+    - a Hoare triple
+    - GOTO
+    - impredicativity
+    - boilerplate
+    - generic programming with Haskell
+    - practical type inference
+    - arbitrary-rank types
+    - delimited continuations
+    - functional dependencies
+    - optimistic evaluation
+    - non-strict programs
+    - wearing the hair shirt
+    - template meta-programming
+    - type variables
+    - first class modules
+    - object-oriented style overloading
+    - monadic input/output
+    - concurrency
+    - exceptions
+    - foreign-language calls
+    - financial engineering
+    - imprecise exceptions
+    - parallelism
+    - unboxed values
+    - continued fractions
+    - arbitrary precision arithmetic
+    - combinators
+    - lambda expressions
+    - datatypes
