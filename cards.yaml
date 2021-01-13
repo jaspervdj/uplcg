@@ -43,6 +43,7 @@ covid19:
     - Zoom dropping out every 10 to 15 seconds
 
 popl2021:
+  default: true
   include:
     - generic
     - covid19
@@ -315,7 +316,6 @@ icfp2020:
     - a shepherd that won't budge
 
 munihac2020:
-  default: true
   include:
     - generic
     - covid19
