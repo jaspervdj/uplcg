@@ -17,10 +17,10 @@ docker:
 
 .PHONY: server
 server: build
-	(cd server && \
+	(cd server && stack exec env \
 	    UPLCG_HOSTNAME=$(UPLCG_HOSTNAME) \
 	    UPLCG_PORT=$(UPLCG_PORT) \
-	    stack exec uplcg-server)
+	    uplcg-server)
 
 .PHONY: stack_build
 stack_build: $(HS_SOURCES)

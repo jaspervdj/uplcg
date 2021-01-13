@@ -48,8 +48,8 @@ popl2021:
     - generic
     - covid19
     - icfp2020
-    
-  black: 
+
+  black:
     - 'My award-winning POLP paper: F-ing _'
     - 'The critical feature that LaTeX is missing is _'
     - 'The next version of Excel must include _ as a killer-feature.'
@@ -62,17 +62,17 @@ popl2021:
     - 'One should definitely become an expert in _ before starting a PhD in PL.'
     - 'How can you call yourself a "PL researcher" without any experience with _?'
     - 'It is 2021 and I still have to explain _ to people around me.'
-    - '_ is the most under-appreciated feature of _.'    
-    - 'I do not always use _, but when I do, I prefer it with _.' 
+    - '_ is the most under-appreciated feature of _.'
+    - 'I do not always use _, but when I do, I prefer it with _.'
     - '_ is the opium of the people.'
     - 'There are three kinds of lies: lies, damned lies, and _.'
-    - 'If you're not suffering, you're doing your _ wrong!'
+    - "If you're not suffering, you're doing your _ wrong!"
     - 'Using _ was the biggest disappointment since the last Game of Thrones season.'
     - 'At POPL, no one will judge you for your attraction to _.'
     - 'I will call my PhD thesis "Fifty Shades of _".'
-    - '"Harry Potter and _" is the best fan fiction I've ever read!'
+    - "'Harry Potter and _' is the best fan fiction I've ever read!"
 
-  white: 
+  white:
     - Kripke semantics
     - covfefe
     - natural deduction
