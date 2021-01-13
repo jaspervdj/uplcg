@@ -42,6 +42,57 @@ covid19:
     - remembering when "working from home" meant a day off
     - Zoom dropping out every 10 to 15 seconds
 
+popl2021:
+  default: true
+  include:
+    - generic
+    - covid19
+    - icfp2020
+    
+  black: 
+    - 'My award-winning POLP paper: F-ing _'
+    - 'The critical feature that LaTeX is missing is _'
+    - 'The next version of Excel must include _ as a killer-feature.'
+    - 'In C++ you can compute _ at compile time.'
+    - '_ is the only thing that can prevent software crisis.'
+    - 'I like my _ gradually-typed.'
+    - 'Relying on _ is against the spirit of functional programming.'
+    - '_ is a dish best served cold.'
+    - 'I am sure one can find _ somewhere in the Clowdr code.'
+    - 'One should definitely become an expert in _ before starting a PhD in PL.'
+    - 'How can you call yourself a "PL researcher" without any experience with _?'
+    - 'It is 2021 and I still have to explain _ to people around me.'
+    - '_ is the most under-appreciated feature of _.'    
+    - 'I do not always use _, but when I do, I prefer it with _.' 
+    - '_ is the opium of the people.'
+    - 'There are three kinds of lies: lies, damned lies, and _.'
+    - 'If you're not suffering, you're doing your _ wrong!'
+    - 'Using _ was the biggest disappointment since the last Game of Thrones season.'
+    - 'At POPL, no one will judge you for your attraction to _.'
+    - 'I will call my PhD thesis "Fifty Shades of _".'
+    - '"Harry Potter and _" is the best fan fiction I've ever read!'
+
+  white: 
+    - Kripke semantics
+    - covfefe
+    - natural deduction
+    - logical relations
+    - Z3
+    - probabilistic programming
+    - Scott domains
+    - Program Synthesis
+    - antitonic functions
+    - zonotopes
+    - Higher-Order Concurrent Separation Logic
+    - verified machine learning
+    - yet another Haskell extension
+    - Do Be Do Be Do
+    - purely functional smart contracts
+    - provably correct blockchain protocols
+    - proofs of False in Coq
+    - the Science of Deep Specification
+    - Hasochism
+
 icfp2020:
   include:
     - generic
@@ -265,7 +316,6 @@ icfp2020:
     - a shepherd that won't budge
 
 munihac2020:
-  default: true
   include:
     - generic
     - covid19
