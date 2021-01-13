@@ -42,6 +42,18 @@ covid19:
     - remembering when "working from home" meant a day off
     - Zoom dropping out every 10 to 15 seconds
 
+popl2021:
+  include:
+    - generic
+    - covid19
+    - icfp2020
+    
+  black: 
+  
+  white: 
+
+
+
 icfp2020:
   include:
     - generic
