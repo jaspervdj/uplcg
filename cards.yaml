@@ -50,7 +50,7 @@ popl2021:
     - icfp2020
 
   black:
-    - 'My award-winning POLP paper: F-ing _'
+    - 'My award-winning POPL paper: F-ing _'
     - 'The critical feature that LaTeX is missing is _'
     - 'The next version of Excel must include _ as a killer-feature.'
     - 'In C++ you can compute _ at compile time.'
