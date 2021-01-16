@@ -71,8 +71,17 @@ popl2021:
     - 'At POPL, no one will judge you for your attraction to _.'
     - 'I will call my PhD thesis "Fifty Shades of _".'
     - "'Harry Potter and _' is the best fan fiction I've ever read!"
+    - 'A Logic for _'
 
   white:
+    - yet another type of equality
+    - THE BLIND SPOT 
+    - UIP
+    - type theory
+    - classical logic 
+    - the law of excluded middle
+    - double negation
+    - Haskell Is Not Not ML
     - Kripke semantics
     - covfefe
     - natural deduction
@@ -173,8 +182,8 @@ icfp2020:
     - the fear of side effects
     - error reporting
     - readable type errors
-    - Haskell wins at ICFP programming contest
-    - C++ wins at ICFP programming contest
+    # - Haskell wins at ICFP programming contest
+    # - C++ wins at ICFP programming contest
     - a cryptocurrency developed using Coq
     - monads are like burritos
     - the egg of Coq
