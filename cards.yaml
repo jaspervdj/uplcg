@@ -519,3 +519,23 @@ cspapers:
     - combinators
     - lambda expressions
     - datatypes
+
+
+plcub:
+  black:
+   - 'Practical Foundations for _'
+   - 'I'm sorry Harry, but I can't write a blog post because I am to busy with _'
+   - 'I'm pretty sure _ is the reason there are so many vegetarians in PLClub'
+   - '_ are just monoids in the category of _'
+   - '_ is the reason we don't have free food at PLClub'
+   - 'The proof of _ is trivial provided you already understand _'
+  white:
+   - burritos
+   - running into Steve at Pottruck
+   - Magic Carpet
+   - TGIF
+   - stealing GRASP pizza
+   - inductive types
+   - coinductive types
+   - arguing about not having meat at TGIF
+   - 
