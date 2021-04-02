@@ -521,21 +521,66 @@ cspapers:
     - datatypes
 
 
-plcub:
+plclub:
   black:
-   - 'Practical Foundations for _'
-   - 'I'm sorry Harry, but I can't write a blog post because I am to busy with _'
-   - 'I'm pretty sure _ is the reason there are so many vegetarians in PLClub'
-   - '_ are just monoids in the category of _'
-   - '_ is the reason we don't have free food at PLClub'
-   - 'The proof of _ is trivial provided you already understand _'
+    - 'Practical Foundations for _'
+    - 'I am sorry Harry, but I can't write a blog post because I am too busy with _'
+    - 'I am pretty sure _ is the reason there are so many vegetarians in PLClub'
+    - '_ are just monoids in the category of _'
+    - '_ is the reason we don't have free food at PLClub'
+    - 'The proof of _ is trivial provided you already understand _'
+    - 'I don't understand why you used _ instead of emacs'
+    - 'The Science of Deep _'
+    - 'The Science of _ Specification'
+    - 'The _ of Deep Specification'
+    - '_ should be sold as an NFT'
+    - 'The Levine Hall basement is full of _'
+    - 'The first years may have windows but at least my office has _'
+    - 'Certified _ with Dependent Types'
+    - '_ types'
+    - '_ : _'
+    - 'Anomaly _ Please report at http://coq.inria.fr/bugs/.'
+    - 'The best feature of Rust is not the type system, it is _'
+    - '"_ is ~one~ reason you are wrong" - Lucas Silver'
+    - '"_ is the C. elegans of programming languages" - Stephanie Weirich - Steve Zdancewic'
+    - '"_ is the E. coli of programming languages" - Stephanie Weirich - Steve Zdancewic'
+    - 'Applications of _ to _'
+    - 'Jean Gallier sent us all an email about _'
+    - Benjamin's next textbook is going to be on _
+    - This week's PLclub talk is going to be on _
+    - '"It is not just _ that I bully" - Irene Yoon'
   white:
-   - burritos
-   - running into Steve at Pottruck
-   - Magic Carpet
-   - TGIF
-   - stealing GRASP pizza
-   - inductive types
-   - coinductive types
-   - arguing about not having meat at TGIF
-   - 
+    - burritos
+    - Steve at Pottruck
+    - Magic Carpet
+    - TGIF
+    - stolen GRASP pizza
+    - inductive types
+    - coinductive types
+    - arguments about not having meat at TGIF
+    - ITrees
+    - QuickChick
+    - QuickCheck
+    - property based testing
+    - Software Foundations
+    - Coq
+    - board-game night
+    - gather.town's Levine Hall simulation
+    - Zoom
+    - emacs
+    - Calvin's 1800 line .emacs file
+    - Groundhog Day
+    - Levine 307's door
+    - Ltac
+    - Coq StdLib 2
+    - Notation change in ext-lib
+    - Makefile
+    - Universe Inconsistency Error
+    - Coq bug reports
+    - Coq reference manual
+    - TGIF food line
+    - Han Dynasty
+    - Steve's loud cats
+    - ':confused-lucas:'
+
+
