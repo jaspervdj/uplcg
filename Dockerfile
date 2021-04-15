@@ -1,4 +1,4 @@
-FROM haskell:8.8.3
+FROM haskell:8.10.4
 WORKDIR /opt/uplcg
 COPY server/uplcg.cabal server/stack.yaml* /opt/uplcg/
 RUN stack build --only-dependencies
