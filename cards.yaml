@@ -520,16 +520,15 @@ cspapers:
     - lambda expressions
     - datatypes
 
-
 plclub:
   black:
     - 'Practical Foundations for _'
-    - 'I am sorry Harry, but I can't write a blog post because I am too busy with _'
+    - "I am sorry Harry, but I can't write a blog post because I am too busy with _"
     - 'I am pretty sure _ is the reason there are so many vegetarians in PLClub'
     - '_ are just monoids in the category of _'
-    - '_ is the reason we don't have free food at PLClub'
+    - "_ is the reason we don't have free food at PLClub"
     - 'The proof of _ is trivial provided you already understand _'
-    - 'I don't understand why you used _ instead of emacs'
+    - "I don't understand why you used _ instead of emacs"
     - 'The Science of Deep _'
     - 'The Science of _ Specification'
     - 'The _ of Deep Specification'
@@ -565,12 +564,12 @@ plclub:
     - Software Foundations
     - Coq
     - board-game night
-    - gather.town's Levine Hall simulation
+    - "gather.town's Levine Hall simulation"
     - Zoom
     - emacs
-    - Calvin's 1800 line .emacs file
+    - "Calvin's 1800 line .emacs file"
     - Groundhog Day
-    - Levine 307's door
+    - "Levine 307's door"
     - Ltac
     - Coq StdLib 2
     - Notation change in ext-lib
@@ -580,7 +579,5 @@ plclub:
     - Coq reference manual
     - TGIF food line
     - Han Dynasty
-    - Steve's loud cats
+    - "Steve's loud cats"
     - ':confused-lucas:'
-
-
